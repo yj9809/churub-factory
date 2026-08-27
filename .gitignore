@@ -1,9 +1,42 @@
-# 제외 폴더
-/Library
-/Logs
-/obj
-/Temp
-.vs/
+# Unity generated folders
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/MemoryCaptures/
+/Recordings/
 
+# IDE and generated project files
+/.idea/
+/.vs/
+.vscode/
 *.csproj
 *.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity/OS generated files
+sysinfo.txt
+*.apk
+*.aab
+*.unitypackage
+crashlytics-build.properties
+.DS_Store
+Thumbs.db
+
+# Signing credentials must never be committed
+/Key/
+*.keystore
+*.jks
