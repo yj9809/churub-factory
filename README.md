@@ -106,10 +106,20 @@ Google Play 및 백엔드 기능은 각 서비스의 개발자 설정과 인증 
 - 예약 해제 후 재할당
 - 재고가 없는 작업 제외
 
+개발용 Android APK는 다음 명령으로 재현할 수 있습니다.
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\2021.3.32f1\Editor\Unity.exe' `
+  -batchmode -quit -buildTarget Android -projectPath . `
+  -executeMethod PortfolioBuild.BuildAndroidDevelopment `
+  -logFile Logs\AndroidBuild.log
+```
+
+출력 파일은 `Build/Android/Churub-v1.1.0.apk`이며 저장소에는 포함하지 않습니다.
+
 ## 알려진 제한
 
 - 출시 당시 서비스 SDK를 보존하고 있어 최신 API로의 마이그레이션이 필요합니다.
 - 기존 저장 데이터 호환을 위해 문자열 키 기반 백엔드 스키마를 유지합니다.
 - 자동화 테스트는 현재 작업 할당 핵심 로직부터 단계적으로 확장 중입니다.
 - 상용 또는 외부 에셋은 각 라이선스에 따라 별도로 준비해야 할 수 있습니다.
-

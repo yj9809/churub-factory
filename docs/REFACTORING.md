@@ -76,6 +76,6 @@
 - 스크립트 컴파일: 성공
 - EditMode: 4 passed, 0 failed
 - 순수 코어 .NET 8 smoke test: 성공
+- Android 개발용 APK 빌드: 성공
 
-수동 플레이와 Android 실기기 검증은 후속 단계에서 수행합니다.
-
+수동 플레이와 Android 실기기 설치·실행 검증은 후속 단계에서 수행합니다.
