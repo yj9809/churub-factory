@@ -40,7 +40,7 @@ public class BoxStorage : MonoBehaviour, IStackable, IObjectDataSave
         SetSaveStackObj();
 
         if (bsType == BoxStorageType.ChuruStorage)
-            GameManager.Instance.stackCount.Add(this);
+            GameManager.Instance.AddStackable(this);
     }
 
     private void OnCollisionStay(Collision collision)

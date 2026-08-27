@@ -5,10 +5,10 @@ using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using GooglePlayGames;
 using GooglePlayGames.BasicApi;
+using Churub.Core;
 
-public interface IStackable
+public interface IStackable : IWorkTarget
 {
-    int GetStackCount();
     Transform GetTransform();
     int GetTypeNum();
 }
@@ -48,7 +48,7 @@ public class GameManager : Singleton<GameManager>
     public List<Transform> cbTrans = new List<Transform>();
     private List<Employee> employees = new List<Employee>();
 
-    private Dictionary<IStackable, bool> targetUsage = new Dictionary<IStackable, bool>();
+    private readonly WorkScheduler<IStackable> workScheduler = new WorkScheduler<IStackable>();
 
     public string sceneName;
 
@@ -75,7 +75,7 @@ public class GameManager : Singleton<GameManager>
         employees.AddRange(FindObjectsOfType<Employee>());
         foreach (var stackable in stackCount)
         {
-            targetUsage[stackable] = false; // ��� Ÿ���� ��� ���¸� �ʱ�ȭ
+            workScheduler.Register(stackable);
         }
     }
 
@@ -162,39 +162,39 @@ public class GameManager : Singleton<GameManager>
         {
             stackCount.Add(stackable);
         }
+
+        workScheduler.Register(stackable);
     }
     
     //�������� ã�� Ÿ�� �������̽��� Ȱ���Ͽ� Ÿ�� ���
     public void AddTarget(IStackable stackable)
     {
-        if (!targetUsage.ContainsKey(stackable))
-        {
-            targetUsage[stackable] = false; // �⺻������ false ����
-        }
+        AddStackable(stackable);
     }
 
     // �������� ���� �ִ� Ÿ�� Ȱ���� ��ġ�� �ʰ� �ϱ� ���� Bool���� ���� ����
     public bool IsTargetBeingUsed(IStackable stackable)
     {
-        if (targetUsage.ContainsKey(stackable))
-        {
-            return targetUsage[stackable]; // ��ųʸ����� Ÿ���� ��� ���� ��ȯ
-        }
-        return false; // Ÿ���� ��ųʸ��� ������ ��� ���� �ƴ�
+        return workScheduler.IsReserved(stackable);
     }
 
     // �������� Ÿ���� ���� �ִ� ��� ��ųʸ� Bool �� ������ ���� ���� �ִ��� Ȯ��
     public void SetTargetBeingUsed(IStackable stackable, bool isUsed)
     {
-        if (stackable == null)
+        if (!isUsed)
         {
-            return;
+            workScheduler.Release(stackable);
+        }
+    }
+
+    public bool TryReserveWork(out IStackable stackable)
+    {
+        foreach (var target in stackCount)
+        {
+            workScheduler.Register(target);
         }
 
-        if (targetUsage.ContainsKey(stackable))
-        {
-            targetUsage[stackable] = isUsed;
-        }
+        return workScheduler.TryReserveBest(out stackable);
     }
 
     // �������� Ÿ���� �ٸ� ���������� ����� �ٸ� Ÿ���� ã��
@@ -205,7 +205,7 @@ public class GameManager : Singleton<GameManager>
             if (employee != null)
             {
                 // ���� ��ǥ�� �ִ� ��� ���ο� ��ǥ�� ������Ʈ
-                employee.StartCoroutine(employee.CheckStack());
+                employee.RequestWorkCheck();
             }
         }
     }
