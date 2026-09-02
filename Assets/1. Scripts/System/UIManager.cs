@@ -1,44 +1,10 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
 using Sirenix.OdinInspector;
-using BackEnd;
-
-// ÀÌ°Íµµ ±Ç¿À¼® ÀÛÇ° ¸ÂÀ»²¬?
-// ÀÌ°Å º¸¸é ¾ç½ÉÀûÀ¸·Î ÁÖ¼®Ã³¸® ÇØÁÖ°ÚÁö ½ÍÀ½
-// Ui¿¡ ¹®Á¦ »ı°å´Ù ÇÏ¸é ¹Ù·Î ±Ç¿À¼®ÇÑÅ× ¹®ÀÇ
-
-// ±Ùµ¥ Áö±İ ÀÚ¼¼È÷ º¸´Ï±î ÀÌ ¹Ø¿¡ ÀÖ´Â°Ç ³»²¨ °°À½
-// ±×·¡¼­ ÁÖ¼® Ã³¸® ³²±â°ÚÀ½
-// ÀÌ ºÎºÎ¿¡¼­ UpgradeInfo Å¬·¡½º´Â ±×³É ´Ü¼øÇÏ°Ô ÅØ½ºÆ® ¹è¿­·Î ¹Ş¾Æ¼­ Ã³¸®ÇÏ·Á°í Çß´Âµ¥
-// »õ·Î¿î ¹æ¹ı¿¡ µµÀüÇØº¸°í ½Í¾î ¸¸µé¾ú´ø Å¬·¡½ºÀÓ
-// system.func<ÀÚ·áÇü> ÀÌ·¸°Ô ¼±¾ğÇØµĞ º¯¼ö´Â ¾×¼ÇÀÌ¶û »ìÂ¦ ºñ½ÁÇÏ°Ô È°¿ëÇÒ ¼ö ÀÖ´Â°Å °°À½
-// °ªÀÌ ¹Ù²î¸é ¾Ë¾Æ¼­ ¾÷µ¥ÀÌÆ® µÈ´Ş±î? ±×·± ´À³¦À¸·Î È°¿ëÇÑ°ÅÀÓ 
-// ±×·¡¼­ ¸¸¾à °ª Ãß°¡ÇÏ°í ½Í°í ¾÷µ¥ÀÌÆ®µµ ÇÊ¿äÇÏ´Ù ½ÍÀ¸¸é ¶È°°ÀÌ Ã³¸®ÇØ¼­ ½áº¸¼À
-[System.Serializable]
-public class UpgradeInfo
-{
-    public System.Func<int> count;
-    public System.Func<int> cost;
-    public int maxCount; // ÃÖ´ë ¾÷±×·¹ÀÌµå È½¼ö
-
-    /// <summary>
-    /// ÀÌ°Ô ÅØ½ºÆ® ¾÷µ¥ÀÌÆ® ÇØÁÖ´Â ºÎºĞ
-    /// </summary>
-    /// <param name="count"> ¾÷±×·¹ÀÌµå ÇÑ È½¼ö</param>
-    /// <param name="cost"> ¾÷±×·¹ÀÌµå °¡°İ 2¹è¾¿ ¿Ã¶ó°¡°Ô ¼³Á¤ÇØµ×À»²¬? </param>
-    /// <param name="maxCount"> ÃÖ´ë °¡´ÉÈ½¼ö (¼ÖÁ÷È÷ ÀüºÎ 5·Î ÅëÀÏµÇ¾î ÀÖ¾î¼­ ÇÊ¿äÇÑ°¡ ½Í¾î) </param>
-    public UpgradeInfo(System.Func<int> count, System.Func<int> cost, int maxCount)
-    {
-        this.count = count;
-        this.cost = cost;
-        this.maxCount = maxCount;
-    }
-}
+using Churub.Core;
 
 public class UIManager : Singleton<UIManager>
 {
@@ -61,22 +27,16 @@ public class UIManager : Singleton<UIManager>
 
     [Title("Debug"), SerializeField] private TextMeshProUGUI logText;
 
-    //¿©±âºÎÅÍ À±Á¦¿µ¿¡ Å×½ºÆ® ÂüÁ¶ÀÓ
+    //ì—¬ê¸°ë¶€í„° ìœ¤ì œì˜ì— í…ŒìŠ¤íŠ¸ ì°¸ì¡°ì„
     private Guide guide;
-    //¿©±â±îÁö À±Á¦¿µ¿¡ Å×½ºÆ® ÂüÁ¶¿´À½
-
-    // ¾÷±×·¹ÀÌµå¿ë ¹è¿­µé
-    private float[] speedUpgradeValue = { 1.1f, 1.2f, 1.3f, 1.4f, 1.5f };
-    private int[] speedUpgradeCostValue = { 500, 1000, 3000, 5000, 10000 };
-    private float[] goldPerBoxValue = { 1.2f, 1.4f, 1.6f, 1.8f, 2f };
-    private int[] gPBUpgradeCostVaule = { 5000, 7000, 10000, 20000, 30000 };
+    //ì—¬ê¸°ê¹Œì§€ ìœ¤ì œì˜ì— í…ŒìŠ¤íŠ¸ ì°¸ì¡°ì˜€ìŒ
 
     private Player p;
     private BaseCost baseCost;
     private GameManager gm;
     private AudioManager audioManager;
-
-    private List<UpgradeInfo> upgradeInfos;
+    private UpgradeService upgradeService;
+    private EmployeeFactory employeeFactory;
 
     // Start is called before the first frame update
     void Start()
@@ -85,6 +45,8 @@ public class UIManager : Singleton<UIManager>
         baseCost = DataManager.Instance.baseCost;
         gm = GameManager.Instance;
         audioManager = AudioManager.Instance;
+        upgradeService = new UpgradeService(baseCost);
+        employeeFactory = new EmployeeFactory(gm.employee, p.employee);
         upgradePanel.SetActive(false);
         storePanel.SetActive(false);
 
@@ -93,7 +55,6 @@ public class UIManager : Singleton<UIManager>
 
         logText.text = "";
 
-        SetUpgradeInfo();
         UpdateGoldUI();
         StoreUI();
     }
@@ -132,13 +93,13 @@ public class UIManager : Singleton<UIManager>
     }
 
     #region GoldUI
-    // ÀçÈ­ ´ÜÀ§ º¯°æ
+    // ì¬í™” ë‹¨ìœ„ ë³€ê²½
     private string ChangeNumbet(string number)
     {
         char[] unitAlphabet = new char[3] { 'K', 'M', 'B' };
         int unit = 0;
 
-        // ÀÔ·ÂµÈ number°¡ 6ÀÚ¸®º¸´Ù Å¬ °æ¿ì ´ÜÀ§ º¯È¯
+        // ì…ë ¥ëœ numberê°€ 6ìë¦¬ë³´ë‹¤ í´ ê²½ìš° ë‹¨ìœ„ ë³€í™˜
         while (number.Length > 6)
         {
             unit++;
@@ -147,9 +108,9 @@ public class UIManager : Singleton<UIManager>
 
         if (number.Length > 3)
         {
-            // ¼ıÀÚ·Î º¯È¯
+            // ìˆ«ìë¡œ ë³€í™˜
             double newInt = double.Parse(number);
-            // ¼Ò¼öÁ¡ ÀÌÇÏ¸¦ µÎ ÀÚ¸®±îÁö Ç¥½Ã
+            // ì†Œìˆ˜ì  ì´í•˜ë¥¼ ë‘ ìë¦¬ê¹Œì§€ í‘œì‹œ
             return (newInt / 1000).ToString("0.##") + unitAlphabet[unit];
         }
         else
@@ -162,7 +123,7 @@ public class UIManager : Singleton<UIManager>
 
     public void SellItem()
     {
-        //Å×½ºÆ®¿ë
+        //í…ŒìŠ¤íŠ¸ìš©
         AddGold(900);
     }
 
@@ -172,7 +133,7 @@ public class UIManager : Singleton<UIManager>
         UpdateGoldUI();
     }
 
-    //°ñµå »ç¿ë ÇÔ¼ö
+    //ê³¨ë“œ ì‚¬ìš© í•¨ìˆ˜
     public bool SpendGold(int amount)
     {
         if (p.Gold >= amount)
@@ -189,233 +150,141 @@ public class UIManager : Singleton<UIManager>
     #endregion
 
     #region UpgradeUI
-    // ¾÷±×·¹ÀÌµå µ¥ÀÌÅÍ Ç×¸ñ ³Ö¾îÁÖ´Â ÇÔ¼ö
-    private void SetUpgradeInfo()
-    {
-        int maxCount = baseCost.upgradeCosts["baseUpgradeMaxCount"] ;
-        // ÀÌ°Ô »õ·Î¿î ¹æ½ÄÀ¸·Î Àû¿ëÇÑ ÅØ½ºÆ® ¾÷µ¥ÀÌÆ®ÀÓ 
-        // ÀÌ·¸°Ô »õ·Î¿î Å¬·¡½º ¸®½ºÆ®¿¡ ¹Ì¸® µ¥ÀÌÅÍ¿¡ Á¤º¸¸¦ ÀÔ·ÂÇÒ ¼ö ÀÖ°Ô ¹Ì¸® ³Ö¾îµÒ
-        // ¸¸¾à »õ·Î¿î ÅØ½ºÆ® Á¤º¸ °ª ÇÊ¿äÇÏ¸é ¹ØÂÊ º¸°í Æ÷¸ä ¶È°°ÀÌ ÇØ¼­ ³ÖÀ¸¸é µÊ
-        // µ¥ÀÌÅÍ µñ¼Å³Ê¸® Å° °ª Àß ÀÔ·ÂÇÏ°í ¹®Á¦ »ı±â¸é ÀÌÂÊµµ È®ÀÎ ÇÊ¿ä
-        upgradeInfos = new List<UpgradeInfo>
-        {
-            new UpgradeInfo(() => baseCost.upgradeCosts["baseSpeedUpgradeCount"] , () => baseCost.upgradeCosts["baseSpeedUpgradeCost"] , maxCount ),
-            new UpgradeInfo(() => baseCost.upgradeCosts["baseMaxObjStackCountUpgradeCount"] , () => baseCost.upgradeCosts["baseMaxObjStackCountUpgradeCost"] , maxCount),
-            new UpgradeInfo(() => baseCost.upgradeCosts["baseGoldPerBoxUpgradeCount"] , () => baseCost.upgradeCosts["baseGoldPerBoxUpgradeCost"] , maxCount),
-            new UpgradeInfo(() => baseCost.upgradeCosts["baseEmployeeSpeedUpgradeCount"] , () => baseCost.upgradeCosts["baseEmployeeSpeedUpgradeCost"] , maxCount),
-            new UpgradeInfo(() => baseCost.upgradeCosts["baseEmployeeMaxObjStackCountUpgradeCount"] , () => baseCost.upgradeCosts["baseEmployeeMaxObjStackCountUpgradeCost"] , maxCount),
-            new UpgradeInfo(() => baseCost.upgradeCosts["baseEmployeeAddCount"] , () => baseCost.upgradeCosts["baseEmployeeAddCost"] , maxCount)
-        };
-    }
-    // ¾÷±×·¹ÀÌµå Ç¥½Ã Ç×¸ñ ¾÷µ¥ÀÌÆ® ÇÔ¼ö
     private void UpgradeTextUpdate(int num)
     {
-        if (upgradeInfos[num].count() == 5 && num != 5)
-            upgradeCostText[num].text = "Max";
-        else if(upgradeInfos[num].count() == 3 && num == 5)
+        if (num < 0 || num > (int)UpgradeType.EmployeeAdd || num >= upgradeCostText.Length)
         {
-            upgradeCostText[num].text = "Max";
+            return;
         }
-        else
+
+        UpgradeType type = (UpgradeType)num;
+        UpgradeProgress progress = upgradeService.GetProgress(type);
+
+        upgradeCostText[num].text = progress.IsMaxLevel
+            ? "Max"
+            : ChangeNumbet(progress.Cost.ToString());
+
+        if (upgradeStepSprite.Length <= 0)
         {
-            upgradeCostText[num].text = ChangeNumbet(upgradeInfos[num].cost().ToString());
+            return;
         }
-        upgradeStepImage[num].sprite = upgradeStepSprite[upgradeInfos[num].count()];
+
+        int spriteIndex = Mathf.Clamp(progress.Level, 0, upgradeStepSprite.Length - 1);
+        if (num < upgradeStepImage.Length && upgradeStepImage[num] != null)
+        {
+            upgradeStepImage[num].sprite = upgradeStepSprite[spriteIndex];
+        }
     }
-    // ½ÃÀÛ ½Ã ¾÷±×·¹ÀÌµå Ç×¸ñ ÃÊ±âÈ­ ÇØÁÖ´Â ÇÔ¼ö
+
     private void StartUpgradeTextUpdate()
     {
-        for (int i = 0; i < upgradeCostText.Length; i++)
+        int upgradeCount = Mathf.Min(upgradeCostText.Length, (int)UpgradeType.EmployeeAdd + 1);
+        for (int i = 0; i < upgradeCount; i++)
         {
             UpgradeTextUpdate(i);
         }
     }
-    // ¿ÀÇÇ½º °­È­ ÆĞ³Î ¿©´Â ÇÔ¼ö
+    // ì˜¤í”¼ìŠ¤ ê°•í™” íŒ¨ë„ ì—¬ëŠ” í•¨ìˆ˜
     public void ShowUpgradeUI()
     {
         upgradePanel.SetActive(true);
         StartUpgradeTextUpdate();
 
-        // ¿É¼Ç ¹öÆ° ºñÈ°¼ºÈ­
+        // ì˜µì…˜ ë²„íŠ¼ ë¹„í™œì„±í™”
         Option option = FindObjectOfType<Option>();
         if (option != null)
         {
             option.OptionButtonActive(false);
         }
     }
-    // ¿ÀÇÇ½º °­È­ ÆĞ³Î ´İ´Â ÇÔ¼ö
+    // ì˜¤í”¼ìŠ¤ ê°•í™” íŒ¨ë„ ë‹«ëŠ” í•¨ìˆ˜
     public void CloseUpgradeUI()
     {
         upgradePanel.SetActive(false);
 
-        // ¿É¼Ç ¹öÆ° È°¼ºÈ­
+        // ì˜µì…˜ ë²„íŠ¼ í™œì„±í™”
         Option option = FindObjectOfType<Option>();
         if (option != null)
         {
             option.OptionButtonActive(true);
         }
     }
-    // ¾÷±×·¹ÀÌµå ¼öÄ¡ ¿Ã¸®±â À§ÇÑ ¹öÆ°¿¡ ¿¬°áÇÑ ÇÔ¼ö
     public void Upgrade(int num)
     {
-        int cost = 0;
-        int maxCount = baseCost.upgradeCosts["baseUpgradeMaxCount"] ;
-        // ÀÌ°Ç Switch ¹® ¸»°í ´Ù¸¥°É·Î ÇØº¸°í ½Í¾ú´Âµ¥ ¹æ¹ıÀÌ Àß »ı°¢¾È³µÀ½
-        // ÃßÈÄ »õ·Î¿î ¹æ¹ı ¶°¿À¸£¸é ÀÌÂÊ ¹Ù²Ù¸é µÉ²¨ÀÓ
-        switch (num)
+        UpgradeType type = (UpgradeType)num;
+        UpgradePurchaseStatus purchaseStatus = upgradeService.EvaluatePurchase(type);
+        if (purchaseStatus != UpgradePurchaseStatus.Success)
         {
-            case 0:
-                cost = baseCost.upgradeCosts["baseSpeedUpgradeCost"] ;
-                if (baseCost.upgradeCosts["baseSpeedUpgradeCount"]  < maxCount)
-                {
-                    if (SpendGold(cost))
-                    {
-                        audioManager.PlayEffect(EffectType.Upgrade);
-                        // ÇÃ·¹ÀÌ¾î ÀÌµ¿¼Óµµ
-                        p.BaseSpeed = 5 * speedUpgradeValue[baseCost.upgradeCosts["baseSpeedUpgradeCount"]];
-                        p.CartSpeed = 2.5f * speedUpgradeValue[baseCost.upgradeCosts["baseSpeedUpgradeCount"]];
-                        //ÇÃ·¹ÀÌ¾î ÄÚ½ºÆ®
-                        if(baseCost.upgradeCosts["baseSpeedUpgradeCount"] <= 3)
-                            baseCost.upgradeCosts["baseSpeedUpgradeCost"]  = speedUpgradeCostValue[baseCost.upgradeCosts["baseSpeedUpgradeCount"] + 1];
-                        
-                        baseCost.upgradeCosts["baseSpeedUpgradeCount"] ++;
-                        UpgradeTextUpdate(0);
-                    }
-                }
-                else
-                    LogMessage("ÃÖ´ë ¾÷±×·¹ÀÌµå ÀÔ´Ï´Ù.");
+            HandleUpgradeFailure(purchaseStatus);
+            return;
+        }
+
+        if (type == UpgradeType.EmployeeAdd)
+        {
+            UpgradeProgress progress = upgradeService.GetProgress(type);
+            EmployeeCreationStatus creationStatus =
+                employeeFactory.Validate(progress.NextPurchaseCreatesPackagingEmployee);
+            if (creationStatus != EmployeeCreationStatus.Success)
+            {
+                HandleEmployeeCreationFailure(creationStatus);
+                return;
+            }
+        }
+
+        UpgradePurchaseResult result = upgradeService.TryPurchase(type);
+        if (!result.Succeeded)
+        {
+            HandleUpgradeFailure(result.Status);
+            return;
+        }
+
+        if (result.RequiresEmployeeSpawn)
+        {
+            EmployeeCreationResult creationResult = employeeFactory.TryCreate(result.CreatesPackagingEmployee);
+            if (!creationResult.Succeeded)
+            {
+                HandleEmployeeCreationFailure(creationResult.Status);
+                return;
+            }
+        }
+
+        audioManager.PlayEffect(EffectType.Upgrade);
+        UpdateGoldUI();
+        UpgradeTextUpdate(num);
+    }
+
+    private void HandleUpgradeFailure(UpgradePurchaseStatus status)
+    {
+        switch (status)
+        {
+            case UpgradePurchaseStatus.MaxLevel:
+                LogMessage("ìµœëŒ€ ì—…ê·¸ë ˆì´ë“œ ì…ë‹ˆë‹¤.");
                 break;
-
-            case 1:
-                cost = baseCost.upgradeCosts["baseMaxObjStackCountUpgradeCost"] ;
-                if (baseCost.upgradeCosts["baseMaxObjStackCountUpgradeCount"]  < maxCount)
-                {
-                    if (SpendGold(cost))
-                    {
-                        audioManager.PlayEffect(EffectType.Upgrade);
-                        p.MaxObjStackCount += 1;
-                        baseCost.upgradeCosts["baseMaxObjStackCountUpgradeCount"] ++;
-                        baseCost.upgradeCosts["baseMaxObjStackCountUpgradeCost"]  *= 2;
-                        UpgradeTextUpdate(1);
-                    }
-                }
-                else
-                    LogMessage("ÃÖ´ë ¾÷±×·¹ÀÌµå ÀÔ´Ï´Ù.");
+            case UpgradePurchaseStatus.InsufficientGold:
+                LogMessage("ê³¨ë“œê°€ ë¶€ì¡±í•©ë‹ˆë‹¤.");
                 break;
-
-            case 2:
-                cost = baseCost.upgradeCosts["baseGoldPerBoxUpgradeCost"] ;
-                if (baseCost.upgradeCosts["baseGoldPerBoxUpgradeCount"]  < maxCount)
-                {
-                    if (SpendGold(cost))
-                    {
-                        audioManager.PlayEffect(EffectType.Upgrade);
-                        // °ñµå Áõ°¡·®
-                        p.GoldPerBox = 50 * goldPerBoxValue[baseCost.upgradeCosts["baseGoldPerBoxUpgradeCount"]];
-
-                        if (baseCost.upgradeCosts["baseGoldPerBoxUpgradeCount"] <= 3)
-                            baseCost.upgradeCosts["baseGoldPerBoxUpgradeCount"] = gPBUpgradeCostVaule[baseCost.upgradeCosts["baseGoldPerBoxUpgradeCount"] + 1];
-
-
-                        baseCost.upgradeCosts["baseGoldPerBoxUpgradeCount"] ++;
-                        UpgradeTextUpdate(2);
-                    }
-                }
-                else
-                    LogMessage("ÃÖ´ë ¾÷±×·¹ÀÌµå ÀÔ´Ï´Ù.");
+            default:
+                LogMessage("ì—…ê·¸ë ˆì´ë“œ ì •ë³´ë¥¼ í™•ì¸í•´ì£¼ì„¸ìš”.");
                 break;
+        }
+    }
 
-            case 3:
-                cost = baseCost.upgradeCosts["baseEmployeeSpeedUpgradeCost"] ;
-                if (baseCost.upgradeCosts["baseEmployeeSpeedUpgradeCount"]  < maxCount)
-                {
-                    if (SpendGold(cost))
-                    {
-                        audioManager.PlayEffect(EffectType.Upgrade);
-                        // Á¾¾÷¿ø ±âº» ÀÌµ¿¼Óµµ
-                        baseCost.employeeData["employeeSpeed"]  = 
-                            3 * speedUpgradeValue[baseCost.upgradeCosts["baseEmployeeSpeedUpgradeCount"]];
-                        // Á¾¾÷¿ø Ä«Æ® ÀÌµ¿¼Óµµ
-                        baseCost.employeeData["employeeCartSpeed"] = 
-                            1.5f * speedUpgradeValue[baseCost.upgradeCosts["baseEmployeeSpeedUpgradeCount"]];
-                        // Á¾¾÷¿ø ÄÚ½ºÆ®
-                        if(baseCost.upgradeCosts["baseEmployeeSpeedUpgradeCount"] <= 3)
-                            baseCost.upgradeCosts["baseEmployeeSpeedUpgradeCost"]  = speedUpgradeCostValue[baseCost.upgradeCosts["baseEmployeeSpeedUpgradeCount"] + 1];
-
-                        baseCost.upgradeCosts["baseEmployeeSpeedUpgradeCount"] ++;
-                        UpgradeTextUpdate(3);
-                    }
-                }
-                else
-                    LogMessage("ÃÖ´ë ¾÷±×·¹ÀÌµå ÀÔ´Ï´Ù.");
+    private void HandleEmployeeCreationFailure(EmployeeCreationStatus status)
+    {
+        switch (status)
+        {
+            case EmployeeCreationStatus.NoAvailablePrefab:
+                LogMessage("ìƒì„± ê°€ëŠ¥í•œ ì¢…ì—…ì›ì´ ì—†ìŠµë‹ˆë‹¤.");
                 break;
-
-            case 4:
-                cost = baseCost.upgradeCosts["baseEmployeeMaxObjStackCountUpgradeCost"] ;
-                if (baseCost.upgradeCosts["baseEmployeeMaxObjStackCountUpgradeCount"]  < maxCount)
-                {
-                    if (SpendGold(cost))
-                    {
-                        audioManager.PlayEffect(EffectType.Upgrade);
-                        baseCost.employeeData["employeeMaxObjStackCount"] += 1;
-                        baseCost.upgradeCosts["baseEmployeeMaxObjStackCountUpgradeCost"]  *= 2;
-                        baseCost.upgradeCosts["baseEmployeeMaxObjStackCountUpgradeCount"] ++;
-                        UpgradeTextUpdate(4);
-                    }
-                }
-                else
-                    LogMessage("ÃÖ´ë ¾÷±×·¹ÀÌµå ÀÔ´Ï´Ù.");
+            case EmployeeCreationStatus.MissingEmployeeComponent:
+                LogMessage("ì¢…ì—…ì› í”„ë¦¬íŒ¹ ì„¤ì •ì„ í™•ì¸í•´ì£¼ì„¸ìš”.");
                 break;
-
-            case 5:
-                cost = baseCost.upgradeCosts["baseEmployeeAddCost"];
-                
-                if (baseCost.upgradeCosts["baseEmployeeAddCount"] < 3)
-                {
-                    Debug.Log(baseCost.upgradeCosts["baseEmployeeAddCount"]);
-                    if (SpendGold(cost))
-                    {
-                        audioManager.PlayEffect(EffectType.Upgrade);
-                        int random = Random.Range(0, gm.employee.Count);
-                        Employee employee;
-                        if (baseCost.upgradeCosts["baseEmployeeAddCount"] == 2)
-                        {
-                            Vector3 pos = FindObjectOfType<BoxPackaging>().transform.GetChild(1).transform.position;
-                            employee = Instantiate(gm.employee[random]).GetComponent<Employee>();
-                            Destroy(employee.GetComponent<NavMeshAgent>());
-                            employee.transform.position = pos;
-                            employee.PackaingEmployee();
-                        }
-                        else
-                        {
-                            employee = Instantiate(gm.employee[random], Vector3.zero, Quaternion.identity).GetComponent<Employee>();
-                        }
-                        try
-                        {
-                            employee.name = gm.employee[random].name;
-                        }
-                        catch (System.Exception err)
-                        {
-                            Debug.Log(err);
-                        }
-                        gm.employee.RemoveAt(random);
-                        p.employee.Add(employee);
-
-                        if (baseCost.upgradeCosts["baseEmployeeAddCount"] == 2)
-                        {
-                            baseCost.upgradeCosts["baseEmployeeAddCost"] = 25000;
-                        }
-                        else
-                        {
-                            baseCost.upgradeCosts["baseEmployeeAddCost"] *= 2;
-                        }
-
-                        baseCost.upgradeCosts["baseEmployeeAddCount"]++;
-                        UpgradeTextUpdate(5);
-                    }
-                }
-                else
-                    LogMessage("Á¾¾÷¿øÀÌ ÃÖ´ëÀÔ´Ï´Ù.");
+            case EmployeeCreationStatus.MissingPackagingStation:
+            case EmployeeCreationStatus.MissingPackagingPoint:
+                LogMessage("í¬ì¥ ì§ì› ë°°ì¹˜ ìœ„ì¹˜ë¥¼ í™•ì¸í•´ì£¼ì„¸ìš”.");
+                break;
+            default:
+                LogMessage("ì¢…ì—…ì› ìƒì„± ì •ë³´ë¥¼ í™•ì¸í•´ì£¼ì„¸ìš”.");
                 break;
         }
     }
@@ -455,12 +324,12 @@ public class UIManager : Singleton<UIManager>
     //{
     //    GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
 
-    //    // ÆùÆ® »çÀÌÁî Á¶Á¤
+    //    // í°íŠ¸ ì‚¬ì´ì¦ˆ ì¡°ì •
     //    buttonStyle.fontSize = 25;
 
-    //    if (GUI.Button(new Rect(200, 250, 200, 100), "°¡ÀÌµå ³Ñ±â±â", buttonStyle))
+    //    if (GUI.Button(new Rect(200, 250, 200, 100), "ê°€ì´ë“œ ë„˜ê¸°ê¸°", buttonStyle))
     //        guide.ToNextStep();
-    //    if (GUI.Button(new Rect(430, 250, 200, 100), "µ·", buttonStyle))
+    //    if (GUI.Button(new Rect(430, 250, 200, 100), "ëˆ", buttonStyle))
     //        AddGold(9000);
     //}
     //public void SetGuideStep(Guide guide)

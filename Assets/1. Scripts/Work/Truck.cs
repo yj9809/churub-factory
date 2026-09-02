@@ -61,7 +61,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
             Door.SetBool("Open", true);
             ct = CarType.Come;
 
-            // boxStackÀÌ ¸ğµÎ Ã¤¿öÁ³À» ¶§ °ñµåÈ¹µæ
+            // boxStackì´ ëª¨ë‘ ì±„ì›Œì¡Œì„ ë•Œ ê³¨ë“œíšë“
             Debug.Log($"gold : {gm.P.GoldPerBox}, buff : {gm.P.buffGold}");
             UIManager.Instance.AddGold(boxStack.Count * (int)(gm.P.GoldPerBox + (gm.P.GoldPerBox * gm.P.buffGold)));
             ClearBoxStack();
@@ -76,7 +76,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
     }
     private void SetBoxStackCount()
     {
-        for (int i = 0; i < data.baseCost.objectData["truckBoxStackCount"]; i++)
+        for (int i = 0; i < data.baseCost.TruckBoxCount; i++)
         {
             boxStack.Push(null);
         }
@@ -87,7 +87,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
         //Door.SetBool("Open", true);
         if (!na.pathPending && na.remainingDistance <= na.stoppingDistance)
         {
-            // ´ÙÀ½ Ã¼Å©Æ÷ÀÎÆ®°¡ ÀÖÀ¸¸é ÀÌµ¿
+            // ë‹¤ìŒ ì²´í¬í¬ì¸íŠ¸ê°€ ìˆìœ¼ë©´ ì´ë™
             if (currentCheckPoint < checkPoint.Length - 1 && currentCheckPoint != 2)
             {
                 currentCheckPoint++;
@@ -109,7 +109,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
             }
             else
             {
-                // ¸ğµç Ã¼Å©Æ÷ÀÎÆ®¸¦ Áö³ª¸é ÀÌµ¿ Á¾·á
+                // ëª¨ë“  ì²´í¬í¬ì¸íŠ¸ë¥¼ ì§€ë‚˜ë©´ ì´ë™ ì¢…ë£Œ
                 Door.SetBool("Open", false);
                 doorOpen = false;
                 transform.rotation = Quaternion.Euler(0, 0, 0);
@@ -128,7 +128,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
 
             if (!na.pathPending && na.remainingDistance <= na.stoppingDistance)
             {
-                // ´ÙÀ½ Ã¼Å©Æ÷ÀÎÆ®°¡ ÀÖÀ¸¸é ÀÌµ¿
+                // ë‹¤ìŒ ì²´í¬í¬ì¸íŠ¸ê°€ ìˆìœ¼ë©´ ì´ë™
                 if (currentCheckPoint > 0)
                 {
                     Door.SetBool("Open", false);
@@ -137,7 +137,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
                 }
                 else
                 {
-                    // ´Ù½Ã °¬´Ù°¡ µ¹¾Æ¿Â´Ù.
+                    // ë‹¤ì‹œ ê°”ë‹¤ê°€ ëŒì•„ì˜¨ë‹¤.
                     doorOpen = false;
                     BoxCountTextUpdate();
                     ct = CarType.Go;
@@ -151,7 +151,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
     }
     private void ClearBoxStack()
     {
-        // °ÔÀÓ ¿ÀºêÁ§Æ®µµ ÇÔ²² ¾ø¾Ö±â À§ÇØ Å¬¸®¾î Àü¿¡ ¸®ÅÏ Ç®¸µ ÇØÁÖ´Â ÄÚµå.
+        // ê²Œì„ ì˜¤ë¸Œì íŠ¸ë„ í•¨ê»˜ ì—†ì• ê¸° ìœ„í•´ í´ë¦¬ì–´ ì „ì— ë¦¬í„´ í’€ë§ í•´ì£¼ëŠ” ì½”ë“œ.
         foreach (GameObject item in boxStack)
         {
             PoolingManager.Instance.ReturnObjecte(item);
@@ -166,6 +166,6 @@ public class Truck : MonoBehaviour, IObjectDataSave
     public void ObjectDataSave()
     {
         if(boxStack.Count <= 4)
-            data.baseCost.objectData["truckBoxStackCount"] = boxStack.Count;
+            data.baseCost.TruckBoxCount = boxStack.Count;
     }
 }

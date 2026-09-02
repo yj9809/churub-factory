@@ -17,124 +17,124 @@ public class LeaderBoardManager : MonoBehaviour
             leaderBoardButton.onClick.AddListener(ShowLeaderBoardUI);
         }
 
-        // ÀÚµ¿ ·Î±×ÀÎ ½Ãµµ
+        // ìë™ ë¡œê·¸ì¸ ì‹œë„
         AuthenticateUser();
     }
 
-    // »ç¿ëÀÚ ÀÎÁõ
+    // ì‚¬ìš©ì ì¸ì¦
     private void AuthenticateUser()
     {
         PlayGamesPlatform.Activate();
         Social.localUser.Authenticate((bool success) => {
-            UpdateDebugText(success ? "·Î±×ÀÎ ¼º°ø" : "·Î±×ÀÎ ½ÇÆĞ");
+            UpdateDebugText(success ? "ë¡œê·¸ì¸ ì„±ê³µ" : "ë¡œê·¸ì¸ ì‹¤íŒ¨");
         });
     }
 
-    // ·Î±×ÀÎ »óÅÂ È®ÀÎ
+    // ë¡œê·¸ì¸ ìƒíƒœ í™•ì¸
     private bool IsAuthenticated() => Social.localUser.authenticated;
 
-    // ¸®´õº¸µå UI Ç¥½Ã
+    // ë¦¬ë”ë³´ë“œ UI í‘œì‹œ
     public void ShowLeaderBoardUI()
     {
         if (IsAuthenticated())
         {
-            LoadTopScores(); // »óÀ§ Á¡¼ö ºÒ·¯¿À±â
-            UpdateAndRecordScore(); // Á¡¼ö °»½Å
-            PlayGamesPlatform.Instance.ShowLeaderboardUI(GPGSIds.leaderboard_one); // ¸®´õº¸µå UI Ç¥½Ã
+            LoadTopScores(); // ìƒìœ„ ì ìˆ˜ ë¶ˆëŸ¬ì˜¤ê¸°
+            UpdateAndRecordScore(); // ì ìˆ˜ ê°±ì‹ 
+            PlayGamesPlatform.Instance.ShowLeaderboardUI(GPGSIds.leaderboard_one); // ë¦¬ë”ë³´ë“œ UI í‘œì‹œ
         }
         else
         {
-            UpdateDebugText("»ç¿ëÀÚ°¡ ÀÎÁõµÇÁö ¾Ê¾Ò½À´Ï´Ù.");
+            UpdateDebugText("ì‚¬ìš©ìê°€ ì¸ì¦ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
         }
     }
 
-    // ¸®´õº¸µå »óÀ§ Á¡¼ö ·Îµå
+    // ë¦¬ë”ë³´ë“œ ìƒìœ„ ì ìˆ˜ ë¡œë“œ
     public void LoadTopScores()
     {
         if (IsAuthenticated())
         {
             PlayGamesPlatform.Instance.LoadScores(
-                GPGSIds.leaderboard_one, // ¸®´õº¸µå ID
-                LeaderboardStart.TopScores, // »óÀ§ Á¡¼öºÎÅÍ ½ÃÀÛ
-                10, // ºÒ·¯¿Ã Á¡¼öÀÇ °³¼ö
-                LeaderboardCollection.Public, // °ø°³ ¸®´õº¸µå
-                LeaderboardTimeSpan.AllTime, // ÀüÃ¼ ±â°£
+                GPGSIds.leaderboard_one, // ë¦¬ë”ë³´ë“œ ID
+                LeaderboardStart.TopScores, // ìƒìœ„ ì ìˆ˜ë¶€í„° ì‹œì‘
+                10, // ë¶ˆëŸ¬ì˜¬ ì ìˆ˜ì˜ ê°œìˆ˜
+                LeaderboardCollection.Public, // ê³µê°œ ë¦¬ë”ë³´ë“œ
+                LeaderboardTimeSpan.AllTime, // ì „ì²´ ê¸°ê°„
                 (LeaderboardScoreData data) => {
                     if (data.Valid)
                     {
                         foreach (var score in data.Scores)
                         {
-                            UpdateDebugText($"ÇÃ·¹ÀÌ¾î ID: {score.userID}, Á¡¼ö: {score.value}");
+                            UpdateDebugText($"í”Œë ˆì´ì–´ ID: {score.userID}, ì ìˆ˜: {score.value}");
                         }
                     }
                     else
                     {
-                        UpdateDebugText("¸®´õº¸µå µ¥ÀÌÅÍ°¡ À¯È¿ÇÏÁö ¾Ê½À´Ï´Ù.");
+                        UpdateDebugText("ë¦¬ë”ë³´ë“œ ë°ì´í„°ê°€ ìœ íš¨í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.");
                     }
                 });
         }
         else
         {
-            UpdateDebugText("»ç¿ëÀÚ°¡ ÀÎÁõµÇÁö ¾Ê¾Ò½À´Ï´Ù.");
+            UpdateDebugText("ì‚¬ìš©ìê°€ ì¸ì¦ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
         }
     }
 
-    // ³ªÀÇ ·©Å·°ú Á¡¼ö º¸±â
+    // ë‚˜ì˜ ë­í‚¹ê³¼ ì ìˆ˜ ë³´ê¸°
     public void MyRank()
     {
         if (IsAuthenticated())
         {
             PlayGamesPlatform.Instance.LoadScores(
-                GPGSIds.leaderboard_one, // ¸®´õº¸µå ID
-                LeaderboardStart.PlayerCentered, // ÇÃ·¹ÀÌ¾î Áß½É ¸ğµå
-                1, // 1°³ÀÇ Á¡¼ö¸¸ ºÒ·¯¿À±â
-                LeaderboardCollection.Public, // °ø°³ ¸®´õº¸µå
-                LeaderboardTimeSpan.AllTime, // ÀüÃ¼ ±â°£
+                GPGSIds.leaderboard_one, // ë¦¬ë”ë³´ë“œ ID
+                LeaderboardStart.PlayerCentered, // í”Œë ˆì´ì–´ ì¤‘ì‹¬ ëª¨ë“œ
+                1, // 1ê°œì˜ ì ìˆ˜ë§Œ ë¶ˆëŸ¬ì˜¤ê¸°
+                LeaderboardCollection.Public, // ê³µê°œ ë¦¬ë”ë³´ë“œ
+                LeaderboardTimeSpan.AllTime, // ì „ì²´ ê¸°ê°„
                 (LeaderboardScoreData data) => {
                     if (data.Valid && data.Scores.Length > 0)
                     {
                         long playerScore = data.PlayerScore.value;
 
-                        // Á¡¼ö °»½Å È®ÀÎ
-                        if (playerScore != DataManager.Instance.baseCost.playerData["gold"])
+                        // ì ìˆ˜ ê°±ì‹  í™•ì¸
+                        if (playerScore != DataManager.Instance.baseCost.PlayerGold)
                         {
-                            DataManager.Instance.baseCost.playerData["gold"] = (int)playerScore;
-                            RecordScore(true); // Á¡¼ö ÀúÀå ÈÄ UI °»½Å
+                            DataManager.Instance.baseCost.PlayerGold = playerScore;
+                            RecordScore(true); // ì ìˆ˜ ì €ì¥ í›„ UI ê°±ì‹ 
                         }
                     }
                 });
         }
         else
         {
-            UpdateDebugText("»ç¿ëÀÚ°¡ ÀÎÁõµÇÁö ¾Ê¾Ò½À´Ï´Ù.");
+            UpdateDebugText("ì‚¬ìš©ìê°€ ì¸ì¦ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
         }
     }
 
-    // Á¡¼ö µî·Ï
+    // ì ìˆ˜ ë“±ë¡
     private void RecordScore(bool UI = false)
     {
-        int MaxScore = (int)DataManager.Instance.baseCost.playerData["gold"];
+        int MaxScore = (int)DataManager.Instance.baseCost.PlayerGold;
 
         if (MaxScore > 0)
         {
             PlayGamesPlatform.Instance.ReportScore(MaxScore, GPGSIds.leaderboard_one, (bool success) => {
                 if (success && UI)
                 {
-                    MyRank(); // ¸®´õº¸µå °»½Å
+                    MyRank(); // ë¦¬ë”ë³´ë“œ ê°±ì‹ 
                 }
                 else
                 {
-                    UpdateDebugText("Á¡¼ö µî·Ï¿¡ ½ÇÆĞÇß½À´Ï´Ù.");
+                    UpdateDebugText("ì ìˆ˜ ë“±ë¡ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.");
                 }
             });
         }
         else
         {
-            UpdateDebugText("Gold °ªÀÌ ¼³Á¤µÇÁö ¾Ê¾Ò°Å³ª À¯È¿ÇÏÁö ¾Ê½À´Ï´Ù.");
+            UpdateDebugText("Gold ê°’ì´ ì„¤ì •ë˜ì§€ ì•Šì•˜ê±°ë‚˜ ìœ íš¨í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.");
         }
     }
 
-    // Á¡¼ö °»½Å ÈÄ µî·Ï
+    // ì ìˆ˜ ê°±ì‹  í›„ ë“±ë¡
     private void UpdateAndRecordScore()
     {
         PlayGamesPlatform.Instance.LoadScores(
@@ -148,25 +148,25 @@ public class LeaderBoardManager : MonoBehaviour
                 if (data.Valid && data.PlayerScore != null)
                 {
                     long leaderboardScore = data.PlayerScore.value;
-                    int playerScore = (int)DataManager.Instance.baseCost.playerData["gold"];
+                    int playerScore = (int)DataManager.Instance.baseCost.PlayerGold;
 
                     if (playerScore > leaderboardScore)
                     {
-                        RecordScore(false); // Á¡¼ö¸¸ µî·ÏÇÏ°í UI´Â °»½ÅÇÏÁö ¾ÊÀ½
+                        RecordScore(false); // ì ìˆ˜ë§Œ ë“±ë¡í•˜ê³  UIëŠ” ê°±ì‹ í•˜ì§€ ì•ŠìŒ
                     }
                     else
                     {
-                        UpdateDebugText("ÇÃ·¹ÀÌ¾î Á¡¼ö°¡ ¸®´õº¸µå Á¡¼öº¸´Ù ³ôÁö ¾Ê½À´Ï´Ù.");
+                        UpdateDebugText("í”Œë ˆì´ì–´ ì ìˆ˜ê°€ ë¦¬ë”ë³´ë“œ ì ìˆ˜ë³´ë‹¤ ë†’ì§€ ì•ŠìŠµë‹ˆë‹¤.");
                     }
                 }
                 else
                 {
-                    UpdateDebugText("¸®´õº¸µå Á¡¼ö µ¥ÀÌÅÍ¸¦ ºÒ·¯¿À´Â µ¥ ½ÇÆĞÇß½À´Ï´Ù.");
+                    UpdateDebugText("ë¦¬ë”ë³´ë“œ ì ìˆ˜ ë°ì´í„°ë¥¼ ë¶ˆëŸ¬ì˜¤ëŠ” ë° ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.");
                 }
             });
     }
 
-    // µğ¹ö±× ¸Ş½ÃÁö¸¦ UI¿¡ ¾÷µ¥ÀÌÆ®
+    // ë””ë²„ê·¸ ë©”ì‹œì§€ë¥¼ UIì— ì—…ë°ì´íŠ¸
     private void UpdateDebugText(string message)
     {
         if (leaderBoardDebugText != null)
