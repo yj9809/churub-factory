@@ -71,6 +71,7 @@ public class Employee : MonoBehaviour
     }
 
     [SerializeField] private IStackable currentTarget;
+    private Coroutine workCheckCoroutine;
 
     private void Start()
     {
@@ -89,7 +90,13 @@ public class Employee : MonoBehaviour
         }
 
 
-        StartCoroutine(CheckStack());
+        StartWorkCheck();
+    }
+
+    private void OnDisable()
+    {
+        StopWorkCheck();
+        ReleaseCurrentTarget();
     }
 
     private void Update()
@@ -154,18 +161,16 @@ public class Employee : MonoBehaviour
     // 타겟 전환용 함수
     private void TargetSwitching()
     {
-        if (target != null && (Vector3.Distance(transform.position, target.position) <= 1.3f || 
-            (ingredientStack.Count >= 0 || churuStack.Count >= 0 || boxStack.Count >= 0)))
+        if (target != null && Vector3.Distance(transform.position, target.position) <= 1.3f)
         {
             ChangeTarget();
         }
         else if (currentTarget != null && currentTarget.GetStackCount() == 0 && (ingredientStack.Count <= 0 && churuStack.Count <= 0 && boxStack.Count <= 0))
         {
             // 스택 카운터가 0인 경우 새로운 목표를 설정
-            gm.SetTargetBeingUsed(currentTarget, false);
-            currentTarget = null;
+            ReleaseCurrentTarget();
             moving = false;
-            StartCoroutine(CheckStack()); // 목표 재설정
+            RequestWorkCheck(); // 목표 재설정
         }
     }
     private void ChangeTarget()
@@ -174,9 +179,7 @@ public class Employee : MonoBehaviour
         {
             if (currentTarget != null)
             {
-                StopCoroutine(CheckStack());
-                gm.AddTarget(currentTarget); // 대상이 없으면 추가
-                gm.SetTargetBeingUsed(currentTarget, false);
+                ReleaseCurrentTarget();
             }
 
             if(!cbTransNumCheck)
@@ -189,9 +192,7 @@ public class Employee : MonoBehaviour
         {
             if (currentTarget != null)
             {
-                StopCoroutine(CheckStack());
-                gm.AddTarget(currentTarget); // 대상이 없으면 추가
-                gm.SetTargetBeingUsed(currentTarget, false);
+                ReleaseCurrentTarget();
             }
 
             if(boxTrans == null)
@@ -205,9 +206,7 @@ public class Employee : MonoBehaviour
         {
             if (currentTarget != null)
             {
-                StopCoroutine(CheckStack());
-                gm.AddTarget(currentTarget); // 대상이 없으면 추가
-                gm.SetTargetBeingUsed(currentTarget, false);
+                ReleaseCurrentTarget();
             }
 
             target = truckTrans;
@@ -216,7 +215,7 @@ public class Employee : MonoBehaviour
         {
             cbTransNumCheck = false;
             moving = false;
-            StartCoroutine(CheckStack());
+            RequestWorkCheck();
         }
     }
     // 스택 카운터를 판별해 적절한 타겟을 찾아주는 함수
@@ -226,43 +225,56 @@ public class Employee : MonoBehaviour
         {
             if (!moving)
             {
-                IStackable bestTarget = null;
-                int highestStackCount = 0;
-
-                foreach (var item in gm.stackCount)
-                {
-                    // 타겟이 사용 중이지 않은 것만 고려
-                    if (!gm.IsTargetBeingUsed(item))
-                    {
-                        int count = item.GetStackCount();
-
-                        if (count > highestStackCount && (bestTarget == null || count > highestStackCount * 2))
-                        {
-                            highestStackCount = count;
-                            bestTarget = item;
-                        }
-                    }
-                }
-
-                if (bestTarget != null)
+                if (gm.TryReserveWork(out var bestTarget))
                 {
                     target = bestTarget.GetTransform();
                     currentTarget = bestTarget;
                     moving = true;
-
-                    if (currentTarget != null)
-                    {
-                        gm.AddTarget(currentTarget); // 대상이 없으면 추가
-                        gm.SetTargetBeingUsed(currentTarget, false);
-                    }
-
-                    gm.UpdateTargets(); // 모든 종업원에게 타겟 업데이트
                 }
             }
             yield return new WaitForSeconds(0.5f);
         }
     }
     // 재료 받아오는 함수
+    public void RequestWorkCheck()
+    {
+        StartWorkCheck();
+    }
+
+    private void StartWorkCheck()
+    {
+        if (workCheckCoroutine == null && isActiveAndEnabled)
+        {
+            workCheckCoroutine = StartCoroutine(CheckStack());
+        }
+    }
+
+    private void StopWorkCheck()
+    {
+        if (workCheckCoroutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(workCheckCoroutine);
+        workCheckCoroutine = null;
+    }
+
+    private void ReleaseCurrentTarget()
+    {
+        if (currentTarget == null)
+        {
+            return;
+        }
+
+        if (gm != null)
+        {
+            gm.SetTargetBeingUsed(currentTarget, false);
+        }
+
+        currentTarget = null;
+    }
+
     public void TakeObject(IngredientMaker im)
     {
         if (im.ChuruStack.Count > 0 && MaxObjStackCount > ingredientStack.Count && boxStack.Count <= 0)

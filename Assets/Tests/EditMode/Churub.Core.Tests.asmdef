@@ -1,0 +1,13 @@
+{
+  "name": "Churub.Core.Tests",
+  "references": [
+    "Churub.Core"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false
+}

@@ -90,6 +90,7 @@ public class DataManager : Singleton<DataManager>
 
     public string fileName = "SaveFile";
 
+    private const int MaxInsertAttempts = 3;
     private string gameDataRowInDate = string.Empty;
 
     // Start is called before the first frame update
@@ -108,19 +109,15 @@ public class DataManager : Singleton<DataManager>
     }
     #region 서버 데이터 입출력 함수들
     // 데이터 추가
-    public void GameDataInsert()
+    private Param CreateGameDataParam(bool includeGuestId)
     {
-        if (baseCost == null)
-            baseCost = new BaseCost();
-
-        baseCost.guestID = Backend.BMember.GetGuestID();
-
-        // 데이터를 추가할 경우 위쪽 BaseCost 클래스에서 딕셔너리로 추가 후
-        // 해당 부분 param.Add를 통해 정보를 추가해 줘야함
-        // 불러오는 부분에서도 각종 정보를 직접 넣어주는 코드를 작성해야함
-        // 불러오기 부분에서 따로 주석 처리 해두겠음
         Param param = new Param();
-        param.Add("guestID", baseCost.guestID);
+
+        if (includeGuestId)
+        {
+            param.Add("guestID", baseCost.guestID);
+        }
+
         param.Add("upgradeCosts", baseCost.upgradeCosts);
         param.Add("playerData", baseCost.playerData);
         param.Add("employeeList", baseCost.employeeList);
@@ -129,20 +126,34 @@ public class DataManager : Singleton<DataManager>
         param.Add("gameProgressBool", baseCost.gameProgressBool);
         param.Add("guideStep", baseCost.guideStep);
         param.Add("newGame", baseCost.newGame);
-
-        var bro = Backend.GameData.Insert("TestUserData", param);
-
-        if (bro.IsSuccess())
-        {
-            //삽입한 게임 정보의 고유값입니다.  
-            gameDataRowInDate = bro.GetInDate();
-        }
-        else
-        {
-            GameDataInsert();
-        }
+        return param;
     }
 
+    public bool GameDataInsert()
+    {
+        if (baseCost == null)
+        {
+            baseCost = new BaseCost();
+        }
+
+        baseCost.guestID = Backend.BMember.GetGuestID();
+        Param param = CreateGameDataParam(true);
+
+        for (int attempt = 1; attempt <= MaxInsertAttempts; attempt++)
+        {
+            var response = Backend.GameData.Insert("TestUserData", param);
+            if (response.IsSuccess())
+            {
+                gameDataRowInDate = response.GetInDate();
+                return true;
+            }
+
+            Debug.LogWarning($"Failed to insert game data. Attempt {attempt}/{MaxInsertAttempts}.");
+        }
+
+        Debug.LogError("Failed to insert game data after all retry attempts.");
+        return false;
+    }
     // 데이터가 존재 할 경우 데이터 가져오기
     public void GameDataGet()
     {
@@ -205,15 +216,7 @@ public class DataManager : Singleton<DataManager>
         // 해당 부분도 마찬가지로 데이터 추가할 때 
         // 밑 param.Add로 해당 딕셔너리를 제대로 추가해줘야함
         ObjStackCountSave();
-        Param param = new Param();
-        param.Add("upgradeCosts", baseCost.upgradeCosts);
-        param.Add("playerData", baseCost.playerData);
-        param.Add("employeeList", baseCost.employeeList);
-        param.Add("employeeData", baseCost.employeeData);
-        param.Add("objectData", baseCost.objectData);
-        param.Add("gameProgressBool", baseCost.gameProgressBool);
-        param.Add("guideStep", baseCost.guideStep);
-        param.Add("newGame", baseCost.newGame);
+        Param param = CreateGameDataParam(false);
 
         BackendReturnObject bro = null;
 
