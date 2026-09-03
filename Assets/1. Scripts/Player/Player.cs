@@ -52,30 +52,30 @@ public class Player : MonoBehaviour, IObjectDataSave
         set { boxStack = value; }
     }
 
-    public float MaxObjStackCount 
+    public float MaxObjStackCount
     {
-        get { return baseCost.playerData["maxObjStackCount"]; }
-        set { baseCost.playerData["maxObjStackCount"] = value; }
+        get { return baseCost.PlayerMaxStackCount; }
+        set { baseCost.PlayerMaxStackCount = value; }
     }
     public float BaseSpeed
     {
-        get { return baseCost.playerData["baseSpeed"]; }
-        set { baseCost.playerData["baseSpeed"] = value; }
+        get { return baseCost.PlayerSpeed; }
+        set { baseCost.PlayerSpeed = value; }
     }
     public float CartSpeed
     {
-        get { return baseCost.playerData["baseCartSpeed"]; }
-        set { baseCost.playerData["baseCartSpeed"] = value; }
+        get { return baseCost.PlayerCartSpeed; }
+        set { baseCost.PlayerCartSpeed = value; }
     }
     public float Gold
     {
-        get { return baseCost.playerData["gold"]; }
-        set { baseCost.playerData["gold"] = value; }
+        get { return baseCost.PlayerGold; }
+        set { baseCost.PlayerGold = value; }
     }
     public float GoldPerBox
     {
-        get { return baseCost.playerData["goldPerBox"]; }
-        set { baseCost.playerData["goldPerBox"] = value; }
+        get { return baseCost.PlayerGoldPerBox; }
+        set { baseCost.PlayerGoldPerBox = value; }
     }
 
     public float buffSpeed = 0;
@@ -174,8 +174,8 @@ public class Player : MonoBehaviour, IObjectDataSave
         animator.SetLayerWeight(1, 0);
     }
 
-    #region ¹°°Ç ÁÖ°í ¹Ş´Â ÄÚµåµé
-    // ÀÌ°Ç Àç·á ¹Ş´Â ÄÚµå
+    #region ë¬¼ê±´ ì£¼ê³  ë°›ëŠ” ì½”ë“œë“¤
+    // ì´ê±´ ì¬ë£Œ ë°›ëŠ” ì½”ë“œ
     public void TakeObject(IngredientMaker im)
     {
         if (im.ChuruStack.Count > 0 && 
@@ -187,7 +187,7 @@ public class Player : MonoBehaviour, IObjectDataSave
         }
     }
 
-    // ÀÌ°Ç ÄÁº£ÀÌ¾î¿¡ ¿Ã¸®´Â ÄÚµå
+    // ì´ê±´ ì»¨ë² ì´ì–´ì— ì˜¬ë¦¬ëŠ” ì½”ë“œ
     public void GiveObject(ConveyorBelt cb)
     {
         if (ingredientStack.Count > 0)
@@ -197,7 +197,7 @@ public class Player : MonoBehaviour, IObjectDataSave
         }
     }
 
-    // ÀÌ°Ç Ãò·ìÀÌ³ª ¹Ú½º ¹ŞÀ» ¶§ ¾²´Â ÄÚµå bool °ª¿¡ µû¶ó Ãò·ì ¹ŞÀ»°ÇÁö ¹Ú½º ¹ŞÀ»°ÇÁö ´Ş¶óÁü
+    // ì´ê±´ ì¸„ë£¹ì´ë‚˜ ë°•ìŠ¤ ë°›ì„ ë•Œ ì“°ëŠ” ì½”ë“œ bool ê°’ì— ë”°ë¼ ì¸„ë£¹ ë°›ì„ê±´ì§€ ë°•ìŠ¤ ë°›ì„ê±´ì§€ ë‹¬ë¼ì§
     public void GiveObject(BoxStorage bs, bool isChuru)
     {
         Stack<GameObject> newStack = isChuru ? churuStack : boxStack;
@@ -212,7 +212,7 @@ public class Player : MonoBehaviour, IObjectDataSave
         }
     }
 
-    // ÀÌ°Ç Ãò·ìÀ» ¹Ú½º Æ÷ÀåÇÏ´Â °÷À¸·Î ¿Å±æ ¶§ ¾²´Â ÄÚµå
+    // ì´ê±´ ì¸„ë£¹ì„ ë°•ìŠ¤ í¬ì¥í•˜ëŠ” ê³³ìœ¼ë¡œ ì˜®ê¸¸ ë•Œ ì“°ëŠ” ì½”ë“œ
     public void GiveObject(BoxPackaging bp)
     {
         if (churuStack.Count > 0)
@@ -222,7 +222,7 @@ public class Player : MonoBehaviour, IObjectDataSave
         }
     }
 
-    // ÀÌ°Ç Æ®·°¿¡ ¹Ú½º ¿Å±â´Â ÄÚµå
+    // ì´ê±´ íŠ¸ëŸ­ì— ë°•ìŠ¤ ì˜®ê¸°ëŠ” ì½”ë“œ
     public void GiveObject(Truck tr)
     {
         if (boxStack.Count > 0 && ingredientStack.Count <= 0)
@@ -234,8 +234,8 @@ public class Player : MonoBehaviour, IObjectDataSave
     }
     #endregion
 
-    // ÀÌ°Ç »ç¿ëÁßÀÎ Á¾¾÷¿øµé Á¤º¸¸¦ ÇÃ·¹ÀÌ¾î°¡ °¡Áö°í ÀÖ¾î¼­
-    // °ÔÀÓ ÀúÀåÇÒ ¶§ ÇÃ·¹ÀÌ¾î¿¡¼­ µ¥ÀÌÅÍ ¸Å´ÏÀú·Î Ã³¸®ÇÏ´Â ÄÚµå
+    // ì´ê±´ ì‚¬ìš©ì¤‘ì¸ ì¢…ì—…ì›ë“¤ ì •ë³´ë¥¼ í”Œë ˆì´ì–´ê°€ ê°€ì§€ê³  ìˆì–´ì„œ
+    // ê²Œì„ ì €ì¥í•  ë•Œ í”Œë ˆì´ì–´ì—ì„œ ë°ì´í„° ë§¤ë‹ˆì €ë¡œ ì²˜ë¦¬í•˜ëŠ” ì½”ë“œ
     public void ObjectDataSave()
     {
         foreach (var item in employee)
@@ -249,7 +249,7 @@ public class Player : MonoBehaviour, IObjectDataSave
     {
         if(collision.gameObject.CompareTag("Ingredient"))
         {
-            Debug.Log("½ÇÇà");
+            Debug.Log("ì‹¤í–‰");
             Rigidbody rd = collision.transform.GetComponent<Rigidbody>();
             if (rd != null)
                 Destroy(collision.transform.GetComponent<Rigidbody>());

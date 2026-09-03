@@ -60,6 +60,7 @@ flowchart TD
 - 항상 참이던 `Count >= 0` 이동 조건 수정
 - 작업 선택 규칙을 EditMode에서 독립적으로 테스트
 - 서버 데이터 생성 실패 시 무한 재귀 대신 최대 3회 재시도
+- 업그레이드 계산을 `UpgradeService`로, 직원 생성·등록을 `EmployeeFactory`로 분리
 
 자세한 내용은 [아키텍처](docs/ARCHITECTURE.md)와 [리팩터링 기록](docs/REFACTORING.md)을 참고하세요.
 
@@ -99,12 +100,19 @@ Google Play 및 백엔드 기능은 각 서비스의 개발자 설정과 인증 
   -testResults Logs\EditModeResults.xml -logFile Logs\EditModeTests.log
 ```
 
-현재 `WorkScheduler` EditMode 테스트 4개가 있으며 다음 동작을 검증합니다.
+현재 Core EditMode 테스트 소스는 총 19개이며 다음 동작을 검증합니다.
 
 - 가장 많은 재고를 가진 작업 선택
 - 동일 작업의 중복 예약 방지
 - 예약 해제 후 재할당
 - 재고가 없는 작업 제외
+- 출시 버전의 게임 데이터 기본값 유지
+- 타입 속성과 기존 Dictionary 키의 양방향 호환
+- 시설 해금 상태의 기존 저장 스키마 유지
+- 백엔드 테이블과 필드 이름 유지
+- 6종 업그레이드의 골드 차감, 단계, 다음 비용, 능력치 계산
+- 골드 부족·최대 단계·잘못된 입력에서 상태가 변경되지 않는지 확인
+- 직원 세 번째 구매의 포장 담당 생성 요청
 
 개발용 Android APK는 다음 명령으로 재현할 수 있습니다.
 

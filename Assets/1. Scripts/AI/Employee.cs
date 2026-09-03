@@ -31,8 +31,8 @@ public class Employee : MonoBehaviour
 
     public float MaxObjStackCount
     {
-        get { return baseCost.employeeData["employeeMaxObjStackCount"]; }
-        set { baseCost.employeeData["employeeMaxObjStackCount"] = value; }
+        get { return baseCost.EmployeeMaxStackCount; }
+        set { baseCost.EmployeeMaxStackCount = value; }
     }
 
     private Stack<GameObject> ingredientStack = new Stack<GameObject>();
@@ -132,7 +132,7 @@ public class Employee : MonoBehaviour
             animator.SetBool("isMove", false);
         }
     }
-    //ÀÌµ¿ ÆÇº° ÇÔ¼ö
+    //ì´ë™ íŒë³„ í•¨ìˆ˜
     private void MovementDetection()
     {
         currentPosition = GetComponent<CharacterController>().transform.position;
@@ -144,21 +144,21 @@ public class Employee : MonoBehaviour
 
         previousPosition = currentPosition;
     }
-    // ¹°°ÇÀ» µé°í ÀÖ´ÂÁö ÆÇº°ÇÏ´Â ÇÔ¼ö
+    // ë¬¼ê±´ì„ ë“¤ê³  ìˆëŠ”ì§€ íŒë³„í•˜ëŠ” í•¨ìˆ˜
     private void OnCart()
     {
         if (ingredientStack.Count <= 0 && boxStack.Count <= 0 && churuStack.Count <= 0)
         {
-            na.speed = baseCost.employeeData["employeeSpeed"];
+            na.speed = baseCost.EmployeeSpeed;
             cart.transform.DOScale(0, 0.2f);
         }
         else
         {
-            na.speed = baseCost.employeeData["employeeCartSpeed"];
+            na.speed = baseCost.EmployeeCartSpeed;
             cart.transform.DOScale(Vector3.one, 0.2f);
         }
     }
-    // Å¸°Ù ÀüÈ¯¿ë ÇÔ¼ö
+    // íƒ€ê²Ÿ ì „í™˜ìš© í•¨ìˆ˜
     private void TargetSwitching()
     {
         if (target != null && Vector3.Distance(transform.position, target.position) <= 1.3f)
@@ -167,10 +167,10 @@ public class Employee : MonoBehaviour
         }
         else if (currentTarget != null && currentTarget.GetStackCount() == 0 && (ingredientStack.Count <= 0 && churuStack.Count <= 0 && boxStack.Count <= 0))
         {
-            // ½ºÅÃ Ä«¿îÅÍ°¡ 0ÀÎ °æ¿ì »õ·Î¿î ¸ñÇ¥¸¦ ¼³Á¤
+            // ìŠ¤íƒ ì¹´ìš´í„°ê°€ 0ì¸ ê²½ìš° ìƒˆë¡œìš´ ëª©í‘œë¥¼ ì„¤ì •
             ReleaseCurrentTarget();
             moving = false;
-            RequestWorkCheck(); // ¸ñÇ¥ Àç¼³Á¤
+            RequestWorkCheck(); // ëª©í‘œ ì¬ì„¤ì •
         }
     }
     private void ChangeTarget()
@@ -218,7 +218,7 @@ public class Employee : MonoBehaviour
             RequestWorkCheck();
         }
     }
-    // ½ºÅÃ Ä«¿îÅÍ¸¦ ÆÇº°ÇØ ÀûÀıÇÑ Å¸°ÙÀ» Ã£¾ÆÁÖ´Â ÇÔ¼ö
+    // ìŠ¤íƒ ì¹´ìš´í„°ë¥¼ íŒë³„í•´ ì ì ˆí•œ íƒ€ê²Ÿì„ ì°¾ì•„ì£¼ëŠ” í•¨ìˆ˜
     public IEnumerator CheckStack()
     {
         while (true)
@@ -235,7 +235,7 @@ public class Employee : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
         }
     }
-    // Àç·á ¹Ş¾Æ¿À´Â ÇÔ¼ö
+    // ì¬ë£Œ ë°›ì•„ì˜¤ëŠ” í•¨ìˆ˜
     public void RequestWorkCheck()
     {
         StartWorkCheck();
@@ -282,7 +282,7 @@ public class Employee : MonoBehaviour
             Utility.ObjectDrop(cartTransform, null, im.ChuruStack, ingredientStack, 1);
         }
     }
-    // ÄÁº£ÀÌ¾î·Î ¿Å±â´Â ÇÔ¼ö
+    // ì»¨ë² ì´ì–´ë¡œ ì˜®ê¸°ëŠ” í•¨ìˆ˜
     public void GiveObject(ConveyorBelt cb)
     {
         if (ingredientStack.Count > 0)
@@ -290,7 +290,7 @@ public class Employee : MonoBehaviour
             Utility.ObjectDrop(cb.IngredientStorage, null, ingredientStack, cb.CbStack, 1);
         }
     }
-    // º¯È¯ Àç·á ¹Ş¾Æ¿À´Â ÇÔ¼ö
+    // ë³€í™˜ ì¬ë£Œ ë°›ì•„ì˜¤ëŠ” í•¨ìˆ˜
     public void GiveObject(BoxStorage bs, bool isChuru)
     {
         Stack<GameObject> newStack = isChuru ? churuStack : boxStack;
@@ -300,7 +300,7 @@ public class Employee : MonoBehaviour
             Utility.ObjectDrop(cartTransform, null, bs.BoxStack, newStack, 1);
         }
     }
-    // ¹Ú½º Æ÷Àå´ë¿¡ ¿Å±â´Â ÇÔ¼ö
+    // ë°•ìŠ¤ í¬ì¥ëŒ€ì— ì˜®ê¸°ëŠ” í•¨ìˆ˜
     public void GiveObject(BoxPackaging bp)
     {
         if (churuStack.Count > 0)

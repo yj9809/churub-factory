@@ -85,7 +85,7 @@ public class Guide : MonoBehaviour
             GuideStep();
         }
 
-        // ±¤°í
+        // ê´‘ê³ 
         if (!_ShowAd)
         {
             if (baseCost.guideStep == 6 && truck.BoxStack.Count == 1)
@@ -119,7 +119,7 @@ public class Guide : MonoBehaviour
 
     private void GuideLine()
     {
-        #region ÇÃ·¹ÀÌ¾î Áß½É È­»ìÇ¥ (ÁÖ¼®Ã³¸®)
+        #region í”Œë ˆì´ì–´ ì¤‘ì‹¬ í™”ì‚´í‘œ (ì£¼ì„ì²˜ë¦¬)
         /*if (step < targets.Length)
         {
             Transform target = targets[step].transform;
@@ -136,7 +136,7 @@ public class Guide : MonoBehaviour
         }*/
         #endregion
 
-        #region Å¸°Ù À§Ä¡ È­»ìÇ¥
+        #region íƒ€ê²Ÿ ìœ„ì¹˜ í™”ì‚´í‘œ
         if (baseCost.guideStep < targets.Length)
         {
             Transform target = targets[baseCost.guideStep].transform;
@@ -296,69 +296,69 @@ public class Guide : MonoBehaviour
     private void _Step0()
     {
         SetActiveTarget(0);
-        UpdateGuide("°øÀå³ÉÀÇ Ã¹°ÉÀ½ 1", "¿øÀç·á Ã¢°í·Î ÀÌµ¿", ""
+        UpdateGuide("ê³µì¥ëƒ¥ì˜ ì²«ê±¸ìŒ 1", "ì›ì¬ë£Œ ì°½ê³ ë¡œ ì´ë™", ""
             , player.IngredientStack.Count > 0);
     }
     private void _Step1()
     {
         SetActiveTarget(1);
-        UpdateGuide("°øÀå³ÉÀÇ Ã¹°ÉÀ½ 2", "¿øÀç·á¸¦ ÄÁº£ÀÌ¾î º§Æ®·Î ¿Å±â±â", ""
+        UpdateGuide("ê³µì¥ëƒ¥ì˜ ì²«ê±¸ìŒ 2", "ì›ì¬ë£Œë¥¼ ì»¨ë² ì´ì–´ ë²¨íŠ¸ë¡œ ì˜®ê¸°ê¸°", ""
             , player.IngredientStack.Count <= 0);
     }
     private void _Step2()
     {
         SetActiveTarget(2);
-        UpdateGuide("°øÀå³ÉÀÇ Ã¹°ÉÀ½ 3", "¿Ï¼ºµÈ Ãò¸¨À» ¹Ú½º Æ÷Àå´ë·Î ¿Å±â±â", ""
+        UpdateGuide("ê³µì¥ëƒ¥ì˜ ì²«ê±¸ìŒ 3", "ì™„ì„±ëœ ì¸„ë¦…ì„ ë°•ìŠ¤ í¬ì¥ëŒ€ë¡œ ì˜®ê¸°ê¸°", ""
             , player.ChuruStack.Count > 0);
     }
     private void _Step3()
     {
         SetActiveTarget(3);
-        UpdateGuide("°øÀå³ÉÀÇ Ã¹°ÉÀ½ 4", "Ãò·ì Ã¢°í ÀÌµ¿ ÀÛ¾÷", boxPackaging.ChuruStorage.Count.ToString() + " / 5"
+        UpdateGuide("ê³µì¥ëƒ¥ì˜ ì²«ê±¸ìŒ 4", "ì¸„ë£¹ ì°½ê³  ì´ë™ ì‘ì—…", boxPackaging.ChuruStorage.Count.ToString() + " / 5"
             , player.ChuruStack.Count <= 0 && boxPackaging.ChuruStorage.Count >= 5);
     }
     private void _Step4()
     {
         SetActiveTarget(4);
-        UpdateGuide("°øÀå³ÉÀÇ Ã¹°ÉÀ½ 5", "¹Ú½º Æ÷Àå´ë¿¡¼­ ¹Ú½º Æ÷ÀåÇÏ±â", ""
+        UpdateGuide("ê³µì¥ëƒ¥ì˜ ì²«ê±¸ìŒ 5", "ë°•ìŠ¤ í¬ì¥ëŒ€ì—ì„œ ë°•ìŠ¤ í¬ì¥í•˜ê¸°", ""
             , boxStorage.bsType == BoxStorageType.BoxStorage && boxStorage.BoxStack.Count >= 1);
     }
     private void _Step5()
     {
         truck.gameObject.SetActive(true);
         SetActiveTarget(5);
-        UpdateGuide("°øÀå³ÉÀÇ Ã¹°ÉÀ½ 6", "Ãò¸¨¹Ú½º¸¦ Æ®·°¿¡ ½Æ±â", ""
+        UpdateGuide("ê³µì¥ëƒ¥ì˜ ì²«ê±¸ìŒ 6", "ì¸„ë¦…ë°•ìŠ¤ë¥¼ íŠ¸ëŸ­ì— ì‹£ê¸°", ""
             , player.BoxStack.Count > 0);
     }
     private void _Step6()
     {
         SetActiveTarget(6);
-        UpdateGuide("°øÀå³ÉÀÇ Ã¹°ÉÀ½ fin", "Ãò¸¨¹Ú½º 5°³¸¦ Æ®·°¿¡ ½Ç¾î ÆÇ¸ÅÇÏ±â", truck.BoxStack.Count.ToString() + " / 5"
+        UpdateGuide("ê³µì¥ëƒ¥ì˜ ì²«ê±¸ìŒ fin", "ì¸„ë¦…ë°•ìŠ¤ 5ê°œë¥¼ íŠ¸ëŸ­ì— ì‹¤ì–´ íŒë§¤í•˜ê¸°", truck.BoxStack.Count.ToString() + " / 5"
             , truck.BoxStack.Count >= 5);
     }
     private void _Step7()
     {
         SetActiveTarget(7);
-        UpdateGuide("°øÀå È®Àå 1", "ÄÁº£ÀÌ¾î º§Æ® Ãß°¡ °Ç¼³ÇÏ±â", baseCost.playerData["gold"].ToString() + " / 5000"
+        UpdateGuide("ê³µì¥ í™•ì¥ 1", "ì»¨ë² ì´ì–´ ë²¨íŠ¸ ì¶”ê°€ ê±´ì„¤í•˜ê¸°", baseCost.PlayerGold.ToString() + " / 5000"
             , _MachineObjects[0].activeSelf); 
     }
     private void _Step8()
     {
         SetActiveTarget(8);
-        UpdateGuide("°øÀå¿£ »ç¹«½ÇÀÌ ÇÊ¿äÇÏÁö", "»ç¹«½Ç °Ç¼³ÇÏ±â", baseCost.playerData["gold"].ToString() + " / 2500"
+        UpdateGuide("ê³µì¥ì—” ì‚¬ë¬´ì‹¤ì´ í•„ìš”í•˜ì§€", "ì‚¬ë¬´ì‹¤ ê±´ì„¤í•˜ê¸°", baseCost.PlayerGold.ToString() + " / 2500"
             , _OfficeObject.activeSelf);
     }
     private void _Step9()
     {
         SetActiveTarget(9);
-        UpdateGuide("ÀÌÁ¨ È¥ÀÚÇÏ±â Èûµé¾î", "»ç¹«½Ç¿¡¼­ Á÷¿ø °í¿ëÇÏ±â", baseCost.playerData["gold"].ToString() + " / 5000"
-            , baseCost.upgradeCosts["baseEmployeeAddCount"] > 0);
+        UpdateGuide("ì´ì   í˜¼ìí•˜ê¸° í˜ë“¤ì–´", "ì‚¬ë¬´ì‹¤ì—ì„œ ì§ì› ê³ ìš©í•˜ê¸°", baseCost.PlayerGold.ToString() + " / 5000"
+            , baseCost.EmployeeAddCount > 0);
         employeeAddButton.interactable = true;
     }
     private void _Step10()
     {
         SetActiveTarget(10);
-        UpdateGuide("°øÀå È®Àå 2", "¿øÀç·á ÄÁÅ×´Ï¾î Ãß°¡ °Ç¼³ÇÏ±â", baseCost.playerData["gold"].ToString() + " / 1000"
+        UpdateGuide("ê³µì¥ í™•ì¥ 2", "ì›ì¬ë£Œ ì»¨í…Œë‹ˆì–´ ì¶”ê°€ ê±´ì„¤í•˜ê¸°", baseCost.PlayerGold.ToString() + " / 1000"
             , _ContainerObjects[0].activeSelf);
 
         EmployeeActive();
@@ -366,25 +366,25 @@ public class Guide : MonoBehaviour
     private void _Step11()
     {
         SetActiveTarget(11);
-        UpdateGuide("°øÀå È®Àå 3", "ÄÁº£ÀÌ¾î º§Æ® Ãß°¡ °Ç¼³ÇÏ±â", baseCost.playerData["gold"].ToString() + " / 10000"
+        UpdateGuide("ê³µì¥ í™•ì¥ 3", "ì»¨ë² ì´ì–´ ë²¨íŠ¸ ì¶”ê°€ ê±´ì„¤í•˜ê¸°", baseCost.PlayerGold.ToString() + " / 10000"
             , _MachineObjects[1].activeSelf);
     }
     private void _Step12()
     {
         SetActiveTarget(12);
-        UpdateGuide("°øÀå È®Àå 4", "¿øÀç·á ÄÁÅ×´Ï¾î Ãß°¡ °Ç¼³ÇÏ±â", baseCost.playerData["gold"].ToString() + " / 5000"
+        UpdateGuide("ê³µì¥ í™•ì¥ 4", "ì›ì¬ë£Œ ì»¨í…Œë‹ˆì–´ ì¶”ê°€ ê±´ì„¤í•˜ê¸°", baseCost.PlayerGold.ToString() + " / 5000"
             , _ContainerObjects[1].activeSelf);
     }
     private void _Step13()
     {
         SetActiveTarget(13);
-        UpdateGuide("Ãò¸¨ ÇÃ¸®¸¶ÄÏ ¿ÀÇÂ !", "»óÁ¡ ¼³Ä¡ÇÏ±â", baseCost.playerData["gold"].ToString() + " / 10000"
+        UpdateGuide("ì¸„ë¦… í”Œë¦¬ë§ˆì¼“ ì˜¤í”ˆ !", "ìƒì  ì„¤ì¹˜í•˜ê¸°", baseCost.PlayerGold.ToString() + " / 10000"
             , _StallObject.activeSelf);
     }
     private void _Step14()
     {
         SetActiveTarget(14);
-        UpdateGuide("Ãò¸¨ ½ºÅä¾î ¿ÀÇÂ !", "»óÁ¡ ¾÷±×·¹ÀÌµå ÇÏ±â", baseCost.playerData["gold"].ToString() + " / 20000"
+        UpdateGuide("ì¸„ë¦… ìŠ¤í† ì–´ ì˜¤í”ˆ !", "ìƒì  ì—…ê·¸ë ˆì´ë“œ í•˜ê¸°", baseCost.PlayerGold.ToString() + " / 20000"
             , _StoreObject.activeSelf);
     }
     private void _GuideDone()

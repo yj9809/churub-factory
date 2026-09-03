@@ -1,85 +1,18 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using System.IO;
 using BackEnd;
-using GooglePlayGames;
-using GooglePlayGames.BasicApi;
+using Churub.Core;
 
-// °¢Á¾ ½ºÅÃ, Á¾¾÷¿ø Á¤º¸¸¦ ´ã±â À§ÇÑ ÀÎÅÍÆäÀÌ½º
+// ê°ì¢… ìŠ¤íƒ, ì¢…ì—…ì› ì •ë³´ë¥¼ ë‹´ê¸° ìœ„í•œ ì¸í„°í˜ì´ìŠ¤
 public interface IObjectDataSave
 {
     void ObjectDataSave();
 }
 
-// ÇÃ·¹ÀÌ ½Ã ÀúÀå °ª È®ÀÎ ¿ë Base µ¥ÀÌÅÍ 
-// µ¥ÀÌÅÍ Ãß°¡ ÇÒ °æ¿ì µñ¼Å³Ê¸®<string, (int & float & bool)> °ª È°¿ëÇÏ¿© ¸¸µé°í 
-// ¹Ø¿¡ ÀÖ´Â dataupdata ÇÔ¼ö¿¡¼­ param °ªµµ Ãß°¡ÇØÁà¾ßÇÔ
-public class BaseCost
+// ê¸°ì¡´ ì½”ë“œì™€ í”„ë¦¬íŒ¹ ì°¸ì¡°ë¥¼ ìœ ì§€í•˜ëŠ” í˜¸í™˜ íƒ€ì…ì…ë‹ˆë‹¤.
+// ì‹¤ì œ ëŸ°íƒ€ì„ ë°ì´í„°ì™€ ìŠ¤í‚¤ë§ˆëŠ” Unity ë¹„ì˜ì¡´ Core ì–´ì…ˆë¸”ë¦¬ì— ìˆìŠµë‹ˆë‹¤.
+public class BaseCost : GameDataState
 {
-    public string guestID;
-
-    public Dictionary<string, int> upgradeCosts = new Dictionary<string, int>
-    {
-        { "baseSpeedUpgradeCost", 500 },
-        { "baseMaxObjStackCountUpgradeCost", 500 },
-        { "baseGoldPerBoxUpgradeCost", 5000 },
-        { "baseEmployeeSpeedUpgradeCost", 500 },
-        { "baseEmployeeMaxObjStackCountUpgradeCost", 500 },
-        { "baseEmployeeAddCost", 5000 },
-        { "baseUpgradeMaxCount", 5 },
-        { "baseSpeedUpgradeCount", 0 },
-        { "baseMaxObjStackCountUpgradeCount", 0 },
-        { "baseGoldPerBoxUpgradeCount", 0 },
-        { "baseEmployeeSpeedUpgradeCount", 0 },
-        { "baseEmployeeMaxObjStackCountUpgradeCount", 0 },
-        { "baseEmployeeAddCount", 0 }
-    };
-
-    // Player µ¥ÀÌÅÍ
-    public Dictionary<string, float> playerData = new Dictionary<string, float>
-    {   
-        { "baseSpeed", 5 },
-        { "baseCartSpeed", 2.5f },
-        { "maxObjStackCount", 3 },
-        { "gold", 100},
-        { "goldPerBox", 50 }
-    };
-
-    public List<string> employeeList = new List<string>();
-
-    // Employee µ¥ÀÌÅÍ
-    public Dictionary<string, float> employeeData = new Dictionary<string, float>
-    {
-        { "employeeSpeed", 3 },
-        { "employeeCartSpeed", 1.5f },
-        { "employeeMaxObjStackCount", 3 }
-    };
-
-    // ¿ÀºêÁ§Æ® µ¥ÀÌÅÍ
-    public Dictionary<string, int> objectData = new Dictionary<string, int>
-    {
-        { "conveyorBeltBoxStorageStackCount", 0 },
-        { "churuStorageStackCount", 0 },
-        { "packagingWaitObjCount", 0 },
-        { "boxPackagingCount", 0},
-        { "packagingBoxStorageStackCount", 0 },
-        { "truckBoxStackCount", 0 }
-    };
-
-    public Dictionary<string, bool> gameProgressBool = new Dictionary<string, bool>
-    {
-        { "Office", false },
-        { "Container1", false },
-        { "Machine1", false },
-        { "Container2", false },
-        { "Machine2", false },
-        { "Stall", false },
-        { "Store", false }
-    };
-    public int guideStep = 0;
-    public bool newGame = true;
 }
 
 public class DataManager : Singleton<DataManager>
@@ -107,25 +40,25 @@ public class DataManager : Singleton<DataManager>
             item.ObjectDataSave();
         }
     }
-    #region ¼­¹ö µ¥ÀÌÅÍ ÀÔÃâ·Â ÇÔ¼öµé
-    // µ¥ÀÌÅÍ Ãß°¡
+    #region ì„œë²„ ë°ì´í„° ì…ì¶œë ¥ í•¨ìˆ˜ë“¤
+    // ë°ì´í„° ì¶”ê°€
     private Param CreateGameDataParam(bool includeGuestId)
     {
         Param param = new Param();
 
         if (includeGuestId)
         {
-            param.Add("guestID", baseCost.guestID);
+            param.Add(GameDataSchema.Fields.GuestId, baseCost.guestID);
         }
 
-        param.Add("upgradeCosts", baseCost.upgradeCosts);
-        param.Add("playerData", baseCost.playerData);
-        param.Add("employeeList", baseCost.employeeList);
-        param.Add("employeeData", baseCost.employeeData);
-        param.Add("objectData", baseCost.objectData);
-        param.Add("gameProgressBool", baseCost.gameProgressBool);
-        param.Add("guideStep", baseCost.guideStep);
-        param.Add("newGame", baseCost.newGame);
+        param.Add(GameDataSchema.Fields.UpgradeCosts, baseCost.upgradeCosts);
+        param.Add(GameDataSchema.Fields.PlayerData, baseCost.playerData);
+        param.Add(GameDataSchema.Fields.EmployeeList, baseCost.employeeList);
+        param.Add(GameDataSchema.Fields.EmployeeData, baseCost.employeeData);
+        param.Add(GameDataSchema.Fields.ObjectData, baseCost.objectData);
+        param.Add(GameDataSchema.Fields.GameProgress, baseCost.gameProgressBool);
+        param.Add(GameDataSchema.Fields.GuideStep, baseCost.guideStep);
+        param.Add(GameDataSchema.Fields.NewGame, baseCost.newGame);
         return param;
     }
 
@@ -141,7 +74,7 @@ public class DataManager : Singleton<DataManager>
 
         for (int attempt = 1; attempt <= MaxInsertAttempts; attempt++)
         {
-            var response = Backend.GameData.Insert("TestUserData", param);
+            var response = Backend.GameData.Insert(GameDataSchema.TableName, param);
             if (response.IsSuccess())
             {
                 gameDataRowInDate = response.GetInDate();
@@ -154,50 +87,50 @@ public class DataManager : Singleton<DataManager>
         Debug.LogError("Failed to insert game data after all retry attempts.");
         return false;
     }
-    // µ¥ÀÌÅÍ°¡ Á¸Àç ÇÒ °æ¿ì µ¥ÀÌÅÍ °¡Á®¿À±â
+    // ë°ì´í„°ê°€ ì¡´ì¬ í•  ê²½ìš° ë°ì´í„° ê°€ì ¸ì˜¤ê¸°
     public void GameDataGet()
     {
-        var bro = Backend.GameData.GetMyData("TestUserData", new Where());
+        var bro = Backend.GameData.GetMyData(GameDataSchema.TableName, new Where());
 
         if (bro.IsSuccess())
         {
-            LitJson.JsonData gameDataJson = bro.FlattenRows(); // JsonÀ¸·Î ¸®ÅÏµÈ µ¥ÀÌÅÍ¸¦ ¹Ş¾Æ¿É´Ï´Ù.  
+            LitJson.JsonData gameDataJson = bro.FlattenRows(); // Jsonìœ¼ë¡œ ë¦¬í„´ëœ ë°ì´í„°ë¥¼ ë°›ì•„ì˜µë‹ˆë‹¤.
 
-            // ¹Ş¾Æ¿Â µ¥ÀÌÅÍÀÇ °¹¼ö°¡ 0ÀÌ¶ó¸é µ¥ÀÌÅÍ°¡ Á¸ÀçÇÏÁö ¾Ê´Â °ÍÀÔ´Ï´Ù. 
+            // ë°›ì•„ì˜¨ ë°ì´í„°ì˜ ê°¯ìˆ˜ê°€ 0ì´ë¼ë©´ ë°ì´í„°ê°€ ì¡´ì¬í•˜ì§€ ì•ŠëŠ” ê²ƒì…ë‹ˆë‹¤.
             if(gameDataJson.Count > 0)
             {
-                gameDataRowInDate = gameDataJson[0]["inDate"].ToString(); //ºÒ·¯¿Â °ÔÀÓ Á¤º¸ÀÇ °íÀ¯°ªÀÔ´Ï´Ù.  
+                gameDataRowInDate = gameDataJson[0]["inDate"].ToString(); //ë¶ˆëŸ¬ì˜¨ ê²Œì„ ì •ë³´ì˜ ê³ ìœ ê°’ì…ë‹ˆë‹¤.
 
                 baseCost = new BaseCost();
 
-                baseCost.guideStep = int.Parse(gameDataJson[0]["guideStep"].ToString());
-                baseCost.newGame = bool.Parse(gameDataJson[0]["newGame"].ToString());
-                baseCost.guestID = gameDataJson[0]["guestID"].ToString();
+                baseCost.guideStep = int.Parse(gameDataJson[0][GameDataSchema.Fields.GuideStep].ToString());
+                baseCost.newGame = bool.Parse(gameDataJson[0][GameDataSchema.Fields.NewGame].ToString());
+                baseCost.guestID = gameDataJson[0][GameDataSchema.Fields.GuestId].ToString();
 
-                //µ¥ÀÌÅÍ Ãß°¡ÇÒ °æ¿ì ÇØ´ç ºÎºĞ¿¡ ¹İº¹¹®À» ÅëÇØ µ¥ÀÌÅÍ Á¤º¸¸¦ ³Ö¾îÁà¾ßÇÔ
-                // ¹Ø¿¡ foreach Çü½ÄÀÌ³ª for ¹® »ç¿ëÇÏ¿© ÇØ´ç Çü½ÄÀ¸·Î ÇØ´ç µ¥ÀÌÅÍ¸¦ Àß ³Ö¾îÁà¾ßÇÔ
-                foreach (string itemKey in gameDataJson[0]["upgradeCosts"].Keys)
+                //ë°ì´í„° ì¶”ê°€í•  ê²½ìš° í•´ë‹¹ ë¶€ë¶„ì— ë°˜ë³µë¬¸ì„ í†µí•´ ë°ì´í„° ì •ë³´ë¥¼ ë„£ì–´ì¤˜ì•¼í•¨
+                // ë°‘ì— foreach í˜•ì‹ì´ë‚˜ for ë¬¸ ì‚¬ìš©í•˜ì—¬ í•´ë‹¹ í˜•ì‹ìœ¼ë¡œ í•´ë‹¹ ë°ì´í„°ë¥¼ ì˜ ë„£ì–´ì¤˜ì•¼í•¨
+                foreach (string itemKey in gameDataJson[0][GameDataSchema.Fields.UpgradeCosts].Keys)
                 {
-                    baseCost.upgradeCosts[itemKey] = int.Parse(gameDataJson[0]["upgradeCosts"][itemKey].ToString());
+                    baseCost.upgradeCosts[itemKey] = int.Parse(gameDataJson[0][GameDataSchema.Fields.UpgradeCosts][itemKey].ToString());
                 }
-                foreach (string itemKey in gameDataJson[0]["playerData"].Keys)
+                foreach (string itemKey in gameDataJson[0][GameDataSchema.Fields.PlayerData].Keys)
                 {
-                    baseCost.playerData[itemKey] = float.Parse(gameDataJson[0]["playerData"][itemKey].ToString());
+                    baseCost.playerData[itemKey] = float.Parse(gameDataJson[0][GameDataSchema.Fields.PlayerData][itemKey].ToString());
                 }
-                foreach (string itemKey in gameDataJson[0]["employeeData"].Keys)
+                foreach (string itemKey in gameDataJson[0][GameDataSchema.Fields.EmployeeData].Keys)
                 {
-                    baseCost.employeeData[itemKey] = float.Parse(gameDataJson[0]["employeeData"][itemKey].ToString());
+                    baseCost.employeeData[itemKey] = float.Parse(gameDataJson[0][GameDataSchema.Fields.EmployeeData][itemKey].ToString());
                 }
-                foreach (string itemKey in gameDataJson[0]["objectData"].Keys)
+                foreach (string itemKey in gameDataJson[0][GameDataSchema.Fields.ObjectData].Keys)
                 {
-                    baseCost.objectData[itemKey] = int.Parse(gameDataJson[0]["objectData"][itemKey].ToString());
+                    baseCost.objectData[itemKey] = int.Parse(gameDataJson[0][GameDataSchema.Fields.ObjectData][itemKey].ToString());
                 }
-                foreach (string itemKey in gameDataJson[0]["gameProgressBool"].Keys)
+                foreach (string itemKey in gameDataJson[0][GameDataSchema.Fields.GameProgress].Keys)
                 {
-                    baseCost.gameProgressBool[itemKey] = bool.Parse(gameDataJson[0]["gameProgressBool"][itemKey].ToString());
+                    baseCost.gameProgressBool[itemKey] = bool.Parse(gameDataJson[0][GameDataSchema.Fields.GameProgress][itemKey].ToString());
                 }
 
-                foreach (LitJson.JsonData equip in gameDataJson[0]["employeeList"])
+                foreach (LitJson.JsonData equip in gameDataJson[0][GameDataSchema.Fields.EmployeeList])
                 {
                     baseCost.employeeList.Add(equip.ToString());
                 }
@@ -205,7 +138,7 @@ public class DataManager : Singleton<DataManager>
         }
     }
 
-    // °ÔÀÓ Á¤º¸¸¦ ¾÷µ¥ÀÌÆ® ÇÏ´Â ÇÔ¼ö
+    // ê²Œì„ ì •ë³´ë¥¼ ì—…ë°ì´íŠ¸ í•˜ëŠ” í•¨ìˆ˜
     public void GameDataUpdate()
     {
         if (baseCost == null)
@@ -213,8 +146,8 @@ public class DataManager : Singleton<DataManager>
             return;
         }
 
-        // ÇØ´ç ºÎºĞµµ ¸¶Âù°¡Áö·Î µ¥ÀÌÅÍ Ãß°¡ÇÒ ¶§ 
-        // ¹Ø param.Add·Î ÇØ´ç µñ¼Å³Ê¸®¸¦ Á¦´ë·Î Ãß°¡ÇØÁà¾ßÇÔ
+        // í•´ë‹¹ ë¶€ë¶„ë„ ë§ˆì°¬ê°€ì§€ë¡œ ë°ì´í„° ì¶”ê°€í•  ë•Œ
+        // ë°‘ param.Addë¡œ í•´ë‹¹ ë”•ì…”ë„ˆë¦¬ë¥¼ ì œëŒ€ë¡œ ì¶”ê°€í•´ì¤˜ì•¼í•¨
         ObjStackCountSave();
         Param param = CreateGameDataParam(false);
 
@@ -222,20 +155,20 @@ public class DataManager : Singleton<DataManager>
 
         if (string.IsNullOrEmpty(gameDataRowInDate))
         {
-            bro = Backend.GameData.Update("TestUserData", new Where(), param);
+            bro = Backend.GameData.Update(GameDataSchema.TableName, new Where(), param);
         }
         else
         {
-            bro = Backend.GameData.UpdateV2("TestUserData", gameDataRowInDate, Backend.UserInDate, param);
+            bro = Backend.GameData.UpdateV2(GameDataSchema.TableName, gameDataRowInDate, Backend.UserInDate, param);
         }
     }
 
-    // µ¥ÀÌÅÍ »èÁ¦ ÇÔ¼ö
+    // ë°ì´í„° ì‚­ì œ í•¨ìˆ˜
     public void DeleteData()
     {
-        BackendReturnObject bro = Backend.GameData.DeleteV2("TestUserData", gameDataRowInDate, Backend.UserInDate);
+        BackendReturnObject bro = Backend.GameData.DeleteV2(GameDataSchema.TableName, gameDataRowInDate, Backend.UserInDate);
         
-        // µ¥ÀÌÅÍ¸¦ »èÁ¦ÇÏ°í °ÔÀÓÀ» ²¨¹ö¸²
+        // ë°ì´í„°ë¥¼ ì‚­ì œí•˜ê³  ê²Œì„ì„ êº¼ë²„ë¦¼
         if(bro.IsSuccess())
         {
             Application.Quit();

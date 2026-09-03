@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 using Sirenix.OdinInspector;
+using Churub.Core;
 
 public enum UnlockType
 {
@@ -70,7 +71,7 @@ public class UnlockManager : MonoBehaviour
 
     private void CheckUnlockStatus()
     {
-        if (baseCost.gameProgressBool[unlockType.ToString()])
+        if (baseCost.IsUnlocked(unlockType.ToString()))
         {
             _Object.SetActive(true);
             DisableObjects();
@@ -146,7 +147,7 @@ public class UnlockManager : MonoBehaviour
         switch (unlockType)
         {
             case UnlockType.Office:
-                baseCost.gameProgressBool["Office"] = true;
+                baseCost.SetUnlocked(GameDataSchema.Progress.Office, true);
                 DisableObjects();
                 break;
             case UnlockType.Container1:
@@ -159,11 +160,11 @@ public class UnlockManager : MonoBehaviour
                 UpdateMachineProgress();
                 break;
             case UnlockType.Stall:
-                baseCost.gameProgressBool["Stall"] = true;
+                baseCost.SetUnlocked(GameDataSchema.Progress.Stall, true);
                 break;
             case UnlockType.Store:
-                baseCost.gameProgressBool["Stall"] = false;
-                baseCost.gameProgressBool["Store"] = true;
+                baseCost.SetUnlocked(GameDataSchema.Progress.Stall, false);
+                baseCost.SetUnlocked(GameDataSchema.Progress.Store, true);
                 DisableObjects();
                 break;
         }
@@ -171,25 +172,25 @@ public class UnlockManager : MonoBehaviour
 
     private void UpdateContainerProgress()
     {
-        if (!baseCost.gameProgressBool["Container1"])
+        if (!baseCost.IsUnlocked(GameDataSchema.Progress.Container1))
         {
-            baseCost.gameProgressBool["Container1"] = true;
+            baseCost.SetUnlocked(GameDataSchema.Progress.Container1, true);
         }
-        else if (!baseCost.gameProgressBool["Container2"])
+        else if (!baseCost.IsUnlocked(GameDataSchema.Progress.Container2))
         {
-            baseCost.gameProgressBool["Container2"] = true;
+            baseCost.SetUnlocked(GameDataSchema.Progress.Container2, true);
         }
     }
 
     private void UpdateMachineProgress()
     {
-        if (!baseCost.gameProgressBool["Machine1"])
+        if (!baseCost.IsUnlocked(GameDataSchema.Progress.Machine1))
         {
-            baseCost.gameProgressBool["Machine1"] = true;
+            baseCost.SetUnlocked(GameDataSchema.Progress.Machine1, true);
         }
-        else if (!baseCost.gameProgressBool["Machine2"])
+        else if (!baseCost.IsUnlocked(GameDataSchema.Progress.Machine2))
         {
-            baseCost.gameProgressBool["Machine2"] = true;
+            baseCost.SetUnlocked(GameDataSchema.Progress.Machine2, true);
         }
     }
 

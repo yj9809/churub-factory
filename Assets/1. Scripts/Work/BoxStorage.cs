@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Sirenix.OdinInspector;
 
-// ÀÌ°Ç ³» ÀÛÇ°
-// ÀÌ enumÀº µü ºÁµµ ¹Ú½º ½ºÅä¸®Áö Å¸ÀÔ ±¸ºĞÀ» À§ÇÑ°ÅÀÓ
+// ì´ê±´ ë‚´ ì‘í’ˆ
+// ì´ enumì€ ë”± ë´ë„ ë°•ìŠ¤ ìŠ¤í† ë¦¬ì§€ íƒ€ì… êµ¬ë¶„ì„ ìœ„í•œê±°ì„
 public enum BoxStorageType
 {
     ChuruStorage,
@@ -65,13 +65,13 @@ public class BoxStorage : MonoBehaviour, IStackable, IObjectDataSave
         }
     }
 
-    // ÀÌ°Ç °ÔÀÓ ½ÃÀÛÇßÀ» °æ¿ì °ÔÀÓ ÀúÀå Á¤º¸ ºÒ·¯¿À±â ÇÔ¼öÀÓ
-    // ½ºÅÃ ºÒ·¯¿À±â ÇÔ¼ö Ãß°¡ÇÒ °æ¿ì µñ¼Å³Ê¸® Å° °ª Á¦´ë·Î ÀÔ·ÂÇØ¼­ Ãß°¡ ¹Ù¶÷
+    // ì´ê±´ ê²Œì„ ì‹œì‘í–ˆì„ ê²½ìš° ê²Œì„ ì €ì¥ ì •ë³´ ë¶ˆëŸ¬ì˜¤ê¸° í•¨ìˆ˜ì„
+    // ìŠ¤íƒ ë¶ˆëŸ¬ì˜¤ê¸° í•¨ìˆ˜ ì¶”ê°€í•  ê²½ìš° ë”•ì…”ë„ˆë¦¬ í‚¤ ê°’ ì œëŒ€ë¡œ ì…ë ¥í•´ì„œ ì¶”ê°€ ë°”ëŒ
     public void SetSaveStackObj()
     {
         if (bsType == BoxStorageType.ChuruStorage)
         {
-            for (int i = 0; i < data.baseCost.objectData["churuStorageStackCount"]; i++)
+            for (int i = 0; i < data.baseCost.ChuruStorageCount; i++)
             {
                 boxTransformNum = Mathf.Clamp(boxStack.Count / 10, 0, boxTransform.Length - 1);
                 GameObject churu = PoolingManager.Instance.GetObj(this.churu);
@@ -82,7 +82,7 @@ public class BoxStorage : MonoBehaviour, IStackable, IObjectDataSave
         }
         else if(bsType == BoxStorageType.BoxStorage)
         {
-            for (int i = 0; i < data.baseCost.objectData["packagingBoxStorageStackCount"]; i++)
+            for (int i = 0; i < data.baseCost.PackagingStorageCount; i++)
             {
                 boxTransformNum = Mathf.Clamp(boxStack.Count / 10, 0, boxTransform.Length - 1);
                 GameObject box = PoolingManager.Instance.GetObj(this.box);
@@ -93,24 +93,24 @@ public class BoxStorage : MonoBehaviour, IStackable, IObjectDataSave
         }
     }
 
-    // ÀÌ°Ç Á¾¾÷¿øÀÌ ½ºÅÃ °¹¼ö ÆÄ¾ÇÇØ¼­ ´Ù¸¥ ¸ñÀû±â¸¦ Ã£¾Æ¾ßÇÏ±â ¶§¹®¿¡
-    // ¾×¼Ç ºñ½ÁÇÏ°Ô ½ºÅÃ Ä«¿îÆ®¸¦ Ç×»ó ¾÷µ¥ÀÌÆ® ÇØÁÖ´Â°ÅÀÓ
+    // ì´ê±´ ì¢…ì—…ì›ì´ ìŠ¤íƒ ê°¯ìˆ˜ íŒŒì•…í•´ì„œ ë‹¤ë¥¸ ëª©ì ê¸°ë¥¼ ì°¾ì•„ì•¼í•˜ê¸° ë•Œë¬¸ì—
+    // ì•¡ì…˜ ë¹„ìŠ·í•˜ê²Œ ìŠ¤íƒ ì¹´ìš´íŠ¸ë¥¼ í•­ìƒ ì—…ë°ì´íŠ¸ í•´ì£¼ëŠ”ê±°ì„
     public int GetStackCount() => boxStack.Count;
-    // ÀÌ°Íµµ Á¾¾÷¿øÀ» À§ÇÑ Å¸°Ù ¿öÅ© Æ÷ÀÎÆ® Ã£¾ÆÁÖ´Â°Å
-    // ¹º°¡ Á¾¾÷¿øÀÌ ÀÌ»óÇÏ´Ù ½ÍÀ¸¸é ÀÌ ºÎºĞ º¸°í ÇØ´ç ±â°è¿¡ ¿öÅ© Æ÷ÀÎÆ®°¡
-    // ÀÚ½Ä 0¹ø¿¡ ÀÖ³ª Àß È®ÀÎÇØºÁ 
+    // ì´ê²ƒë„ ì¢…ì—…ì›ì„ ìœ„í•œ íƒ€ê²Ÿ ì›Œí¬ í¬ì¸íŠ¸ ì°¾ì•„ì£¼ëŠ”ê±°
+    // ë­”ê°€ ì¢…ì—…ì›ì´ ì´ìƒí•˜ë‹¤ ì‹¶ìœ¼ë©´ ì´ ë¶€ë¶„ ë³´ê³  í•´ë‹¹ ê¸°ê³„ì— ì›Œí¬ í¬ì¸íŠ¸ê°€
+    // ìì‹ 0ë²ˆì— ìˆë‚˜ ì˜ í™•ì¸í•´ë´
     public Transform GetTransform() => transform.GetChild(0).transform;
-    // ÀÌ°Ç µüÈ÷ ÇÊ¿ä ¾ø´Â°Å °°Àºµ¥ ¹º°¡ ÂüÁ¶°¡ ÀÖ¾î¼­ ¸ø Áö¿ì°ÚÀ½
-    // ³ªÁß¿¡ Àß È®ÀÎÇØ¼­ ÇÊ¿ä¾ø´Ù ½ÍÀ¸¸é Áö¿ö¹ö·Á
+    // ì´ê±´ ë”±íˆ í•„ìš” ì—†ëŠ”ê±° ê°™ì€ë° ë­”ê°€ ì°¸ì¡°ê°€ ìˆì–´ì„œ ëª» ì§€ìš°ê² ìŒ
+    // ë‚˜ì¤‘ì— ì˜ í™•ì¸í•´ì„œ í•„ìš”ì—†ë‹¤ ì‹¶ìœ¼ë©´ ì§€ì›Œë²„ë ¤
     public int GetTypeNum() => 1;
 
-    // ÀÌ ºÎºĞÀÌ ¹Ù·Î ½ºÅÃ Ãß°¡ ºÎºĞÀÓ
-    // ÀúÀåÇÏ°í ½ºÅÃ ´Ù½Ã ºÒ·¯¿Ã ¶§ ÀÌ»óÇÏ´Ù ½ÍÀ¸¸é ÀÌ ºÎºĞ È®ÀÎ ÇÊ¿ä
+    // ì´ ë¶€ë¶„ì´ ë°”ë¡œ ìŠ¤íƒ ì¶”ê°€ ë¶€ë¶„ì„
+    // ì €ì¥í•˜ê³  ìŠ¤íƒ ë‹¤ì‹œ ë¶ˆëŸ¬ì˜¬ ë•Œ ì´ìƒí•˜ë‹¤ ì‹¶ìœ¼ë©´ ì´ ë¶€ë¶„ í™•ì¸ í•„ìš”
     public void ObjectDataSave()
     {
         if (bsType == BoxStorageType.ChuruStorage)
-            DataManager.Instance.baseCost.objectData["churuStorageStackCount"]  = boxStack.Count;
+            DataManager.Instance.baseCost.ChuruStorageCount = boxStack.Count;
         else
-            DataManager.Instance.baseCost.objectData["packagingBoxStorageStackCount"] = boxStack.Count;
+            DataManager.Instance.baseCost.PackagingStorageCount = boxStack.Count;
     }
 }

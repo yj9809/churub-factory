@@ -50,7 +50,7 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
 
     private void SetSaveStackObj()
     {
-        for (int i = 0; i < data.baseCost.objectData["packagingWaitObjCount"]; i++)
+        for (int i = 0; i < data.baseCost.PackagingWaitCount; i++)
         {
             GameObject newChuru = PoolingManager.Instance.GetObj(churu);
             newChuru.transform.parent = churuStorageParent;
@@ -58,7 +58,7 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
             newChuru.transform.localPosition = new Vector3(0, 0 + (Utility.ObjRendererCheck(newChuru) * churuStorage.Count), 0);
         }
 
-        count = data.baseCost.objectData["boxPackagingCount"];
+        count = data.baseCost.PackagingCount;
         if(count != 0 && count < maxCount)
         {
             newBox = Instantiate(box, boxParent);
@@ -141,7 +141,7 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
 
     public void ObjectDataSave()
     {
-        data.baseCost.objectData["packagingWaitObjCount"] = churuStorage.Count;
-        data.baseCost.objectData["boxPackagingCount"] = count;
+        data.baseCost.PackagingWaitCount = churuStorage.Count;
+        data.baseCost.PackagingCount = count;
     }
 }
