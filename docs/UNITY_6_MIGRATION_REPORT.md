@@ -3,11 +3,11 @@
 ## 진행 상태
 
 - 기준일: 2026-09-03 (Asia/Seoul)
-- 현재 단계: 2단계 패키지 호환성 조사 및 Unity 2022.3 설치 준비
-- 판정: **0단계 완료, 1단계 자동화 기준선 완료, 실제 기기 검증 대기**
-- 다음 단계 진입: 공식 호환성이 확인된 변경만 순차 적용한다. 실제 기기가 필요한 플레이·성능·외부 서비스 검증은 미실행 상태로 유지한다.
+- 현재 단계: 3단계 Unity 2022.3 LTS 중간 전환 완료
+- 판정: **0~3단계의 자동화 게이트 통과, 실제 기기 검증 대기**
+- 다음 단계 진입: Unity 6.0 LTS로 전환한다. 실제 기기가 필요한 플레이·성능·외부 서비스 검증은 미실행 상태로 유지한다.
 
-이 문서는 `v1.1.0`의 현재 상태를 기록한다. 엔진, 패키지, 에셋, 씬, 프리팹, 직렬화 데이터 및 Android 설정은 아직 변경하지 않았다.
+이 문서는 `v1.1.0` 기준선과 각 엔진 전환 결과를 누적 기록한다. Unity 2022.3 전환 과정에서 Editor가 갱신한 패키지·Project Settings와 Android 템플릿만 변경했으며, 게임 에셋·씬·프리팹·직렬화 데이터는 변경하지 않았다.
 
 ## Git 기준점
 
@@ -38,12 +38,12 @@
 | Android NDK | 21.3.6528147 |
 | OpenJDK | Java 8 |
 | 추가 설치 Editor | `6000.0.24f1`, `6000.5.4f1` |
-| 필요한 중간 Editor | `2022.3.76f1` (`d938583f0741`) 설치 완료 |
+| 설치된 중간 Editor | `2022.3.62f1` (`4af31df58517`) 및 Android 모듈 |
 | 목표 Editor | Unity 6.3 (`6000.3.x`) 미설치 |
 
 프로젝트의 정확한 버전 근거는 `ProjectSettings/ProjectVersion.txt`다. 설치된 `6000.5.4f1`은 요청한 Unity 6.3 계열이 아니므로 목표 Editor로 사용하지 않는다.
 
-Unity Hub 공식 headless 설치 흐름으로 2022.3.76f1 및 Android 모듈을 설치했다. 설치 후 실제 도구 버전은 OpenJDK 11.0.14.1, Android NDK 23.1.7779620, Build Tools 34.0.0이며 SDK Platform 34·35·36이 포함되어 있다.
+Unity Hub 공식 headless 설치 흐름으로 먼저 2022.3.76f1과 Android 모듈을 설치했지만, 이 패치는 Extended LTS라 Personal 라이선스에서 종료 코드 198로 실행이 거부됐다. 프로젝트는 이 Editor로 열지 않았다. 지원 가능한 마지막 일반 2022.3 LTS인 2022.3.62f1과 Android 모듈을 추가 설치해 중간 전환에 사용했다. 이 설치에는 OpenJDK 11.0.14.1, Android NDK 23.1.7779620, Build Tools 34.0.0 및 SDK Platform 33·34·35가 포함된다. 2022.3.62f1 릴리스 노트에는 Android SDK 36 지원 추가가 명시되어 있으나 중간 단계에서는 기준선 target API 34를 유지했다.
 
 ## Unity 패키지 기준선
 
@@ -99,7 +99,7 @@ Odin과 DOTween의 일반 assembly file version은 각각 1.0.0.0으로 고정�
 | BackEnd Base SDK | 5.14.1 | 5.18.10 후보 | **미확인** | **미확인** | 공식 커뮤니티에 Unity 6000.3.15f1에서 5.18.10 초기화/로그인 사례가 있으나 정식 Unity 6.3/API 36 지원표는 찾지 못함. 직렬화/서버 스키마는 변경하지 않음 | 공급사 확인 전 버전 확정 금지. 현재 DLL/메타 복원 |
 | DOTween | 1.2.765 | 1.3.030 | 1.3.030 | Android API 비의존 | 현재 버전이 1.2.815 미만이므로 공식 업그레이드 절차 필요. 설정 파일 재생성 및 컴포넌트/프리팹 참조 검증 | BackEnd 뒤 단독 적용. 기존 DOTween 디렉터리/설정 복원 |
 | Odin Inspector | 3.3.1.7 | 현 버전 유지 가능성 검증 | 최소 3.3.1.14 | Android API 비의존 | 3.3.1.14가 Unity 6000.3 호환 수정 포함. 4.x는 serializer 변경 위험 때문에 이번 범위에서 선택하지 않음 | 라이선스 보유 패키지 확보 후 적용. 3.3.1.7 DLL/메타 복원 |
-| 2D Tilemap Extras | 2.2.7 | 3.1.1 | 5.x | Android API 비의존 | 3.x/4.x에서 Editor namespace 및 일부 직렬화 동작 변경. Tile/RuleTile 에셋 GUID·참조와 씬/프리팹 diff 필수 확인 | Unity 공식 패키지 단계. manifest/lock 복원 |
+| 2D Tilemap Extras | 2.2.7 | 3.1.3 | 5.x | Android API 비의존 | 3.x/4.x에서 Editor namespace 및 일부 직렬화 동작 변경. Tile/RuleTile 에셋 GUID·참조와 씬/프리팹 diff 필수 확인 | Unity 공식 패키지 단계. manifest/lock 복원 |
 | Visual Scripting | 1.9.4 | 1.8.0이 2022.3 검증 버전이나 **다운그레이드하지 않고 현 버전 컴파일 검증** | 1.9.12 | Android API 비의존 | 업데이트 전 graph/settings 백업 권고. graph/unit 재생성 여부와 scene/prefab diff 확인 | Unity 공식 패키지 단계. manifest/lock 및 백업 graph 복원 |
 
 ### 조사 근거
@@ -128,7 +128,7 @@ Odin과 DOTween의 일반 assembly file version은 각각 1.0.0.0으로 고정�
 
 | 단계 | 확정 버전 | 변경셋 | 공식 릴리스 |
 | --- | --- | --- | --- |
-| 중간 2022 LTS | 2022.3.76f1 | `d938583f0741` | [Unity 2022.3.76f1](https://unity.com/releases/editor/whats-new/2022.3.76f1) |
+| 중간 2022 LTS | 2022.3.62f1 | `4af31df58517` | [Unity 2022.3.62f1](https://unity.com/releases/editor/whats-new/2022.3.62f1) |
 | 중간 Unity 6.0 LTS | 6000.0.82f1 | `2fb0dae735e1` | [Unity 6000.0.82f1](https://unity.com/releases/editor/whats-new/6000.0.82f1) |
 | 최종 Unity 6.3 LTS | 6000.3.22f1 | `1c726e1fb402` | [Unity 6000.3.22f1](https://unity.com/releases/editor/whats-new/6000.3.22f1) |
 
@@ -229,6 +229,50 @@ Unity 실행 파일의 절대 경로는 코드에 없지만 출력 파일의 버
 | Native ABI | `arm64-v8a`, `armeabi-v7a` |
 | IL2CPP 산출물 | 양쪽 ABI의 `libil2cpp.so` 확인 |
 
+## Unity 2022.3 LTS 중간 전환 결과
+
+### Editor 및 패키지 변환
+
+- 사용 Editor: `2022.3.62f1 (4af31df58517)`
+- API Updater: 외부 DLL 27개를 검사했고 수정된 DLL은 0개
+- ProjectVersion: `2021.3.32f1` → `2022.3.62f1`
+- Editor 자동 해석 패키지: Tilemap Extras 3.1.3, Version Control 2.7.1, Rider Editor 3.0.36, Timeline 1.7.7
+- 추가 직접 패키지: AI Navigation 1.1.6
+- 잠금 의존성: Android Logcat 1.4.5, Mobile Notifications 2.4.0, Subsystem Registration 1.1.1
+- 유지한 주요 패키지: Unity Ads 4.12.0, TextMeshPro 3.0.9, Test Framework 1.1.33, Visual Scripting 1.9.4
+- 게임 에셋·씬·프리팹 변경: 없음
+- Application Identifier `com.Churub.ChurubFactory`, 버전 `1.1.0`, version code 73, IL2CPP, ARMv7+ARM64, Built-in Render Pipeline 유지
+
+### 컴파일과 테스트
+
+- 배치 모드 프로젝트 import 및 스크립트 컴파일 완료, 컴파일 오류 0개
+- 결과 XML: `Build/Migration/2022-editmode-results.xml` (Git 제외 경로)
+- EditMode 결과: **총 19개 / 통과 19개 / 실패 0개 / 건너뜀 0개**
+- 테스트 실행 시간: 0.0588678초
+- 실제 기기 플레이·기존 세이브 로드·외부 서비스는 연결 기기가 없어 미실행이며 통과로 보고하지 않는다.
+
+### Android 개발 빌드
+
+Unity 2021용 커스텀 Gradle 파일을 그대로 사용할 때 두 가지 호환성 문제가 재현됐다.
+
+1. 제거된 `MINIFY_WITH_R_EIGHT` 치환자가 빈 문자열이 되어 `android.enableR8` boolean 파싱에 실패했다. Unity 2022 기본 `gradleTemplate.properties`와 비교해 해당 구식 항목만 제거했다.
+2. Unity 2022의 `settings.gradle`은 `PREFER_SETTINGS` 저장소 모드를 사용해 기존 `mainTemplate.gradle`에 삽입된 Google Play Games 로컬 Maven 저장소를 무시했다. Unity 2022 기본 `settingsTemplate.gradle`을 생성하고 `GeneratedLocalRepo` 경로만 다시 선언했다.
+
+또한 Android Gradle Plugin 요구에 맞춰 `mainTemplate.gradle`의 Android 블록에 Unity 기본 템플릿과 동일한 namespace와 `NDKPATH`를 적용했다.
+
+| APK 검증 항목 | 결과 |
+| --- | --- |
+| 출력 | `Build/Android/Churub-v1.1.0.apk` |
+| 크기 | 104,968,771 bytes |
+| Package | `com.Churub.ChurubFactory` |
+| Version | code 73 / name `1.1.0` |
+| minSdkVersion | 24 |
+| targetSdkVersion / compileSdkVersion | 34 / 34 |
+| Native ABI | `arm64-v8a`, `armeabi-v7a` |
+| Scripting Backend | 양쪽 ABI의 `libil2cpp.so`로 IL2CPP 확인 |
+
+빌드 프로세스 종료 코드는 0이며 APK를 `aapt`와 ZIP 엔트리로 정적 검증했다. Google Play Games 0.11.01 Android library의 manifest target 22 경고와 AGP 7.4.2의 compile SDK 34 경고는 남아 있어 Unity 6/플러그인 업데이트 단계의 추적 항목으로 둔다.
+
 ## 0단계 완료 조건 판정
 
 | 완료 조건 | 판정 |
@@ -243,7 +287,7 @@ Unity 실행 파일의 절대 경로는 코드에 없지만 출력 파일의 버
 
 ## 다음 작업
 
-1. 공식 호환성 조사 결과에 따라 패키지 업데이트 순서와 최소 버전을 확정한다.
-2. Unity 2022.3.76f1에서 프로젝트를 변환하고, 컴파일·19개 EditMode 테스트·Android 개발 빌드를 반복한다.
-3. 각 중간 단계 성공 후에만 Unity 6.0 최신 패치와 Unity 6.3.22f1로 진행한다.
-4. 실제 Android 기기가 연결되면 기준 세이브, 핵심 플레이, 외부 서비스, 성능 검증을 수행한다.
+1. Unity 6000.0.82f1 및 Android 모듈을 설치하고 Built-in Render Pipeline 상태로 전환한다.
+2. 컴파일·19개 EditMode 테스트·Android 개발 빌드가 모두 성공한 뒤에만 Unity 6.3.22f1로 진행한다.
+3. Unity 6.3 기본 Android 템플릿과 커스텀 변경을 다시 비교하고 API 36 Release AAB를 생성한다.
+4. 실제 Android 기기가 연결되면 기준 세이브, 핵심 플레이, 외부 서비스, 생명주기 및 성능 검증을 수행한다.
