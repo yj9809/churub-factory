@@ -3,11 +3,11 @@
 ## 진행 상태
 
 - 기준일: 2026-09-03 (Asia/Seoul)
-- 현재 단계: 3단계 Unity 2022.3 LTS 중간 전환 완료
-- 판정: **0~3단계의 자동화 게이트 통과, 실제 기기 검증 대기**
-- 다음 단계 진입: Unity 6.0 LTS로 전환한다. 실제 기기가 필요한 플레이·성능·외부 서비스 검증은 미실행 상태로 유지한다.
+- 현재 단계: 4단계 Unity 6.0 LTS 중간 전환 완료
+- 판정: **0~4단계의 자동화 게이트 통과, 실제 기기 검증 대기**
+- 다음 단계 진입: Unity 6.3 LTS로 전환한다. 실제 기기가 필요한 플레이·성능·외부 서비스 검증은 미실행 상태로 유지한다.
 
-이 문서는 `v1.1.0` 기준선과 각 엔진 전환 결과를 누적 기록한다. Unity 2022.3 전환 과정에서 Editor가 갱신한 패키지·Project Settings와 Android 템플릿만 변경했으며, 게임 에셋·씬·프리팹·직렬화 데이터는 변경하지 않았다.
+이 문서는 `v1.1.0` 기준선과 각 엔진 전환 결과를 누적 기록한다. Unity 2022.3 및 6.0 전환 과정에서 Editor가 갱신한 패키지·Project Settings와 Android 템플릿만 변경했으며, 게임 에셋·씬·프리팹·직렬화 데이터는 변경하지 않았다.
 
 ## Git 기준점
 
@@ -39,6 +39,7 @@
 | OpenJDK | Java 8 |
 | 추가 설치 Editor | `6000.0.24f1`, `6000.5.4f1` |
 | 설치된 중간 Editor | `2022.3.62f1` (`4af31df58517`) 및 Android 모듈 |
+| 설치된 Unity 6.0 Editor | `6000.0.82f1` (`2fb0dae735e1`) 및 Android 모듈 |
 | 목표 Editor | Unity 6.3 (`6000.3.x`) 미설치 |
 
 프로젝트의 정확한 버전 근거는 `ProjectSettings/ProjectVersion.txt`다. 설치된 `6000.5.4f1`은 요청한 Unity 6.3 계열이 아니므로 목표 Editor로 사용하지 않는다.
@@ -273,6 +274,48 @@ Unity 2021용 커스텀 Gradle 파일을 그대로 사용할 때 두 가지 호�
 
 빌드 프로세스 종료 코드는 0이며 APK를 `aapt`와 ZIP 엔트리로 정적 검증했다. Google Play Games 0.11.01 Android library의 manifest target 22 경고와 AGP 7.4.2의 compile SDK 34 경고는 남아 있어 Unity 6/플러그인 업데이트 단계의 추적 항목으로 둔다.
 
+## Unity 6.0 LTS 중간 전환 결과
+
+### Editor 및 패키지 변환
+
+- 사용 Editor: `6000.0.82f1 (2fb0dae735e1)`
+- Android 도구: OpenJDK 17.0.18, Android NDK r27c (`27.2.12479018`), Build Tools 36.0.0, SDK Platform 34·35·36
+- ProjectVersion: `2022.3.62f1` → `6000.0.82f1`
+- Unity가 해석한 주요 패키지: Tilemap Extras 4.1.1, Unity Ads 4.16.4, AI Navigation 2.0.14, Version Control 2.13.6, Test Framework 1.6.0, Timeline 1.8.12, uGUI 2.0.0, Visual Scripting 1.9.11
+- TextMeshPro 직접 패키지는 uGUI 2.0 통합에 따라 manifest/lock에서 제거됨
+- Multiplayer Center 1.0.0과 `ProjectSettings/MultiplayerManager.asset`이 Editor 변환으로 추가됨
+- 게임 에셋·씬·프리팹 변경: 없음
+- Application Identifier `com.Churub.ChurubFactory`, 버전 `1.1.0`, version code 73, IL2CPP, ARMv7+ARM64, Built-in Render Pipeline 유지
+
+### 컴파일과 테스트
+
+- 최초 import 및 스크립트 컴파일 완료, 컴파일 오류 0개
+- 결과 XML: `Build/Migration/6000.0-editmode-results.xml` (Git 제외 경로)
+- EditMode 결과: **총 19개 / 통과 19개 / 실패 0개 / 건너뜀 0개**
+- 테스트 실행 시간: 0.0458581초
+- 실제 기기 플레이·기존 세이브 로드·외부 서비스는 연결 기기가 없어 미실행이며 통과로 보고하지 않는다.
+
+### Android 개발 빌드
+
+Unity 6.0 기본 Android 템플릿과 기존 커스텀 템플릿을 비교하며 다음 문제를 분리 해결했다.
+
+1. Unity 6에서는 EDM4U가 `settingsTemplate.gradle`에 저장소를 직접 삽입하므로 2022 단계에서 수동 추가한 동일 로컬 Maven 선언을 제거했다.
+2. 구형 `mainTemplate.gradle`의 부분 자동 변환 결과에는 Unity 6 GameActivity/Swappy가 요구하는 공유 C++ STL 설정이 생성되지 않았다. Unity 6 기본 main 템플릿으로 재생성해 `-DANDROID_STL=c++_shared`가 생성되는 것을 확인했다.
+3. 템플릿 교체 직후 Resolver 캐시는 갱신됐지만 의존성 블록이 삽입되지 않아 Google Play Services 버전 리소스가 누락됐다. `AndroidResolverDependencies.xml`과 각 SDK dependency XML에 기록된 동일 의존성을 Resolver 관리 마커로 복원했다.
+
+| APK 검증 항목 | 결과 |
+| --- | --- |
+| 출력 | `Build/Android/Churub-v1.1.0.apk` |
+| 크기 | 114,923,731 bytes |
+| Package | `com.Churub.ChurubFactory` |
+| Version | code 73 / name `1.1.0` |
+| minSdkVersion | 24 |
+| targetSdkVersion / compileSdkVersion | 34 / 34 |
+| Native ABI | `arm64-v8a`, `armeabi-v7a` |
+| Scripting Backend | 양쪽 ABI의 `libil2cpp.so`로 IL2CPP 확인 |
+
+최종 빌드 프로세스 종료 코드는 0이며 APK를 Unity 6 번들 `aapt`와 ZIP 엔트리로 정적 검증했다. 임시 CMake 출력 `.utmp`, Resolver 템플릿 백업, 빌드 타임스탬프는 커밋 대상에서 제거했다.
+
 ## 0단계 완료 조건 판정
 
 | 완료 조건 | 판정 |
@@ -287,7 +330,7 @@ Unity 2021용 커스텀 Gradle 파일을 그대로 사용할 때 두 가지 호�
 
 ## 다음 작업
 
-1. Unity 6000.0.82f1 및 Android 모듈을 설치하고 Built-in Render Pipeline 상태로 전환한다.
-2. 컴파일·19개 EditMode 테스트·Android 개발 빌드가 모두 성공한 뒤에만 Unity 6.3.22f1로 진행한다.
-3. Unity 6.3 기본 Android 템플릿과 커스텀 변경을 다시 비교하고 API 36 Release AAB를 생성한다.
+1. Unity 6000.3.22f1 및 Android 모듈을 설치하고 Built-in Render Pipeline 상태로 최종 전환한다.
+2. Unity 6.3 기본 Android 템플릿과 커스텀 변경을 다시 비교하고 API 36 Release AAB를 생성한다.
+3. Build Profiles와 `PortfolioBuild.cs`의 Development/Release 책임 및 출력 이름을 정리한다.
 4. 실제 Android 기기가 연결되면 기준 세이브, 핵심 플레이, 외부 서비스, 생명주기 및 성능 검증을 수행한다.
