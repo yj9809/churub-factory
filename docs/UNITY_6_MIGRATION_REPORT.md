@@ -2,12 +2,22 @@
 
 ## 진행 상태
 
-- 기준일: 2026-09-03 (Asia/Seoul)
-- 현재 단계: 4단계 Unity 6.0 LTS 중간 전환 완료
-- 판정: **0~4단계의 자동화 게이트 통과, 실제 기기 검증 대기**
-- 다음 단계 진입: Unity 6.3 LTS로 전환한다. 실제 기기가 필요한 플레이·성능·외부 서비스 검증은 미실행 상태로 유지한다.
+- 최종 갱신일: 2026-09-04 (Asia/Seoul)
+- 현재 단계: Unity 6.3 LTS 엔진 전환 및 엔진 관련 리팩터링 완료
+- 최종 Editor: `6000.3.23f1 (09d2ecc7fb28)`
+- 판정: **엔진 전환 완료. 출시 빌드·실제 기기 검증은 별도 출시 단계로 유예**
 
-이 문서는 `v1.1.0` 기준선과 각 엔진 전환 결과를 누적 기록한다. Unity 2022.3 및 6.0 전환 과정에서 Editor가 갱신한 패키지·Project Settings와 Android 템플릿만 변경했으며, 게임 에셋·씬·프리팹·직렬화 데이터는 변경하지 않았다.
+이 문서는 `v1.1.0` 기준선과 각 엔진 전환 결과를 누적 기록한다. Unity 2022.3, 6.0 및 6.3 전환 과정에서 Editor가 갱신한 패키지·Project Settings, Android 템플릿과 빌드 도구만 변경했으며, 게임 로직·씬·프리팹·세이브 직렬화 구조는 변경하지 않았다.
+
+### 완료 범위와 유예 범위
+
+- 완료: Unity 6.3 프로젝트 import, 컴파일, EditMode 19개, Built-in Render Pipeline 유지, 패키지 변환, Build Profile 및 빌드 스크립트 정리.
+- 완료: Unity 6.3에서 Development APK와 Release validation AAB를 한 차례 생성하고 API 36·minSdk 25·IL2CPP·ARMv7+ARM64·application identifier를 정적 검증.
+- 완료: Unity 6.3 기본 `mainTemplate.gradle`과 비교해 누락된 `apply from: '../shared/common.gradle'` 반영.
+- 유예: 위 템플릿 한 줄을 반영한 이후의 Clean AAB 재검증. Unity 라이선스 및 Software Terms 사용자 조작이 가능한 출시 빌드 단계에서 다시 실행한다.
+- 유예: 실제 Android 기기의 세이브 호환성, 핵심 플레이, 외부 서비스, 생명주기, 성능 및 운영 서명 검증.
+
+유예 항목은 실행하거나 통과했다고 보고하지 않는다. 이는 엔진 전환 완료 판정과 분리하여 출시 승인 조건으로 관리한다.
 
 ## Git 기준점
 
@@ -16,33 +26,33 @@
 | 원격 저장소 | `https://github.com/yj9809/churub-factory.git` |
 | 시작 브랜치 | `main` |
 | 작업 브랜치 | `upgrade/unity-engine` |
-| HEAD | `e1ecee13ba4985a94721f9ba696e2562d4b4c919` |
-| 기준 태그 | `v1.1.0` (HEAD와 일치) |
-| 원격 기준 | `origin/main`이 HEAD와 일치 |
+| 시작 커밋 | `e1ecee13ba4985a94721f9ba696e2562d4b4c919` |
+| Unity 6.0 중간 전환 | `cd1239ccfb6270f31f9bd5cbb660bbb03116f299` |
+| Unity 6.3 최종 전환 | `e5f224052c332aab60cae529f19e7d560fdbd99b` |
+| Android API 36 빌드 파이프라인 | `bea58a25030f2edea8ec7809cd73c9a6719dcd8a` |
+| 기준 태그 | `v1.1.0` (`e1ecee13ba4985a94721f9ba696e2562d4b4c919`) |
+| 원격 기준 | 작업 시작 당시 `origin/main`이 기준 태그와 일치 |
 | 시작 시 작업 트리 | clean |
 
 `v1.1.0` 태그는 이동하거나 다시 생성하지 않았다. `main`에는 직접 변경하지 않았다.
 
-`.gitignore`는 `Library`, `Temp`, `Obj`, `Build`, `Builds`, `Logs`, `UserSettings`, APK/AAB, `Key`, `*.keystore`, `*.jks`를 제외한다. 점검 시 이 경로에 추적 중인 파일은 없었다.
+`.gitignore`는 `Library`, `Temp`, `.utmp`, `Obj`, `Build`, `Builds`, `Logs`, `UserSettings`, APK/AAB, `Key`, `*.keystore`, `*.jks`를 제외한다. 점검 시 이 경로에 추적 중인 파일은 없었다.
 
 ## Unity 설치 및 프로젝트 버전
 
 | 항목 | 값 |
 | --- | --- |
-| 프로젝트 Editor | `2021.3.32f1` |
-| Editor revision | `3b9dae9532f5` |
-| 설치 확인 | `C:\Program Files\Unity\Hub\Editor\2021.3.32f1` |
-| Android Build Support | 설치됨 |
-| Android SDK platforms | API 29, 30, 34 |
-| Android Build Tools | 30.0.2 |
-| Android NDK | 21.3.6528147 |
-| OpenJDK | Java 8 |
-| 추가 설치 Editor | `6000.0.24f1`, `6000.5.4f1` |
+| 기준선 Editor | `2021.3.32f1 (3b9dae9532f5)` |
+| 기준선 설치 위치 | `C:\Program Files\Unity\Hub\Editor\2021.3.32f1` |
+| 기준선 Android 도구 | SDK API 29·30·34, Build Tools 30.0.2, NDK 21.3.6528147, Java 8 |
 | 설치된 중간 Editor | `2022.3.62f1` (`4af31df58517`) 및 Android 모듈 |
 | 설치된 Unity 6.0 Editor | `6000.0.82f1` (`2fb0dae735e1`) 및 Android 모듈 |
-| 목표 Editor | Unity 6.3 (`6000.3.x`) 미설치 |
+| 최종 Editor | `6000.3.23f1` (`09d2ecc7fb28`) |
+| 최종 설치 위치 | `C:\Workspace\UnityEditors\6000.3.23f1` |
+| 최종 Android 도구 | OpenJDK 17.0.18, NDK r27c (`27.2.12479018`), Build Tools 36.0.0, SDK Platform 36 |
+| 현재 ProjectVersion | `6000.3.23f1 (09d2ecc7fb28)` |
 
-프로젝트의 정확한 버전 근거는 `ProjectSettings/ProjectVersion.txt`다. 설치된 `6000.5.4f1`은 요청한 Unity 6.3 계열이 아니므로 목표 Editor로 사용하지 않는다.
+프로젝트의 정확한 버전 근거는 `ProjectSettings/ProjectVersion.txt`다. 별도로 설치된 Unity 6.5 계열은 이번 전환에 사용하지 않았다.
 
 Unity Hub 공식 headless 설치 흐름으로 먼저 2022.3.76f1과 Android 모듈을 설치했지만, 이 패치는 Extended LTS라 Personal 라이선스에서 종료 코드 198로 실행이 거부됐다. 프로젝트는 이 Editor로 열지 않았다. 지원 가능한 마지막 일반 2022.3 LTS인 2022.3.62f1과 Android 모듈을 추가 설치해 중간 전환에 사용했다. 이 설치에는 OpenJDK 11.0.14.1, Android NDK 23.1.7779620, Build Tools 34.0.0 및 SDK Platform 33·34·35가 포함된다. 2022.3.62f1 릴리스 노트에는 Android SDK 36 지원 추가가 명시되어 있으나 중간 단계에서는 기준선 target API 34를 유지했다.
 
@@ -50,7 +60,7 @@ Unity Hub 공식 headless 설치 흐름으로 먼저 2022.3.76f1과 Android 모�
 
 직접 의존성은 `Packages/manifest.json`, 실제 해석 결과는 `Packages/packages-lock.json`을 기준으로 한다.
 
-| 패키지 | 현재 버전 |
+| 패키지 | `v1.1.0` 기준 버전 |
 | --- | --- |
 | 2D Tilemap | 1.0.0 (built-in) |
 | 2D Tilemap Extras | 2.2.7 |
@@ -131,9 +141,9 @@ Odin과 DOTween의 일반 assembly file version은 각각 1.0.0.0으로 고정�
 | --- | --- | --- | --- |
 | 중간 2022 LTS | 2022.3.62f1 | `4af31df58517` | [Unity 2022.3.62f1](https://unity.com/releases/editor/whats-new/2022.3.62f1) |
 | 중간 Unity 6.0 LTS | 6000.0.82f1 | `2fb0dae735e1` | [Unity 6000.0.82f1](https://unity.com/releases/editor/whats-new/6000.0.82f1) |
-| 최종 Unity 6.3 LTS | 6000.3.22f1 | `1c726e1fb402` | [Unity 6000.3.22f1](https://unity.com/releases/editor/whats-new/6000.3.22f1) |
+| 최종 Unity 6.3 LTS | 6000.3.23f1 | `09d2ecc7fb28` | [Unity 6000.3.23f1](https://unity.com/releases/editor/whats-new/6000.3.23f1) |
 
-Unity 6000.3.22f1은 릴리스 페이지 기준 2026-08-13 공개된 당시 최신 6.3 LTS 패치다. 설치 시점에 더 최신 패치가 Hub에 나타나면 공식 릴리스 페이지와 변경셋을 다시 확인한 후 이 표를 갱신한다.
+최종 전환에는 설치 시점에 확인한 Unity 6.3 LTS 패치 `6000.3.23f1`을 사용했다. Unity 6.5 계열은 이번 마이그레이션 대상에서 제외했다.
 
 ## Android Player Settings 기준선
 
@@ -316,6 +326,108 @@ Unity 6.0 기본 Android 템플릿과 기존 커스텀 템플릿을 비교하며
 
 최종 빌드 프로세스 종료 코드는 0이며 APK를 Unity 6 번들 `aapt`와 ZIP 엔트리로 정적 검증했다. 임시 CMake 출력 `.utmp`, Resolver 템플릿 백업, 빌드 타임스탬프는 커밋 대상에서 제거했다.
 
+## Unity 6.3 LTS 최종 전환 결과
+
+### Editor와 패키지
+
+- 사용 Editor: `6000.3.23f1 (09d2ecc7fb28)`
+- Android 도구: OpenJDK 17.0.18, Android NDK r27c (`27.2.12479018`), Build Tools 36.0.0, SDK Platform 36
+- ProjectVersion: `6000.0.82f1` → `6000.3.23f1`
+- 최종 주요 패키지: Tilemap Extras 6.0.3, Unity Ads 4.19.0, Version Control 2.13.6, Rider Editor 3.0.40, Visual Studio Editor 2.0.27, Test Framework 1.6.0, Timeline 1.8.13, uGUI 2.0.0, Visual Scripting 1.9.12
+- Multiplayer Center는 1.0.1로 갱신됐다.
+- `com.unity.ai.navigation` 직접 의존성은 프로젝트 `Assets/Scripts`에 동일 GUID의 NavMesh Components 소스가 이미 있어 중복 컴파일·메뉴 경고를 막기 위해 제거했다. 런타임 NavMesh 에셋이나 씬 참조는 변경하지 않았다.
+- Rainbow Folders 2.4.0 Editor DLL은 Unity 6.3 초기화 예외를 발생시켜 `.dll.meta` define constraint로 `UNITY_6000_3_OR_NEWER`에서만 비활성화했다. 게임 런타임 기능에는 포함되지 않는 Editor 전용 도구다.
+- 외부 SDK인 EDM4U 1.2.181, Google Play Games 0.11.01, Google Play Unity 플러그인, BackEnd 5.14.1, DOTween 1.2.765, Odin 3.3.1.7은 엔진 전환 중 임의로 교체하지 않았다.
+
+Unity 6.3가 199개 텍스처 `.meta`의 importer 스키마를 재직렬화했다. 전체 변경 파일의 기존 `guid:` 값을 비교한 결과 GUID 변경은 0개이며 `.unity`·`.prefab` 변경도 0개다. 해당 `.meta`의 빈 YAML 값 뒤 공백은 Unity 직렬화 결과여서 수동 정리하지 않았다.
+
+### 최종 Android와 렌더링 설정
+
+| 항목 | Unity 6.3 결과 |
+| --- | --- |
+| Application Identifier | `com.Churub.ChurubFactory` |
+| Application version | `1.1.0` |
+| Android version code | 73 |
+| Minimum API Level | 25 |
+| Target / compile API | 36 / 36 |
+| Scripting Backend | IL2CPP |
+| Target Architectures | ARMv7 + ARM64 (`AndroidTargetArchitectures: 3`) |
+| Graphics API | Vulkan → OpenGLES3, 자동 선택 꺼짐 |
+| Rendering Pipeline | Built-in Render Pipeline |
+| Release Minify | 활성화 |
+| Managed Stripping Level | Android override 없음, Unity 6.3 기본값 사용 |
+
+Unity 6.3.23f1은 Android API 24를 더 이상 지원하지 않아 Editor가 최소값을 25로 강제했다. Application Identifier, 앱 버전, version code, Graphics API 순서, IL2CPP, ARMv7+ARM64 및 Built-in Render Pipeline은 기존 의도를 유지했다. URP 패키지나 Render Pipeline Converter는 실행하지 않았다.
+
+### Build Profile과 빌드 스크립트
+
+- `Android Development` Profile: Development Build, APK, Script Debugging/Profiler 연결 꺼짐.
+- `Android Release` Profile: 비개발 빌드, AAB, Release minify 활성화.
+- `PortfolioBuild.cs`는 Build Profile API를 사용하고 출력 이름을 `Application.version`에 맞춘다.
+- Development APK, 서명 없는 Release validation AAB, 운영 서명 Release AAB 진입점을 분리했다.
+- 운영 서명 값은 `CHURUB_KEYSTORE_PATH`, `CHURUB_KEYSTORE_PASS`, `CHURUB_KEYALIAS_NAME`, `CHURUB_KEYALIAS_PASS` 환경변수에서만 읽으며 저장소에 키나 비밀번호를 기록하지 않는다.
+- 빌드 전에 application identifier와 버전이 변경되지 않았는지 검사한다. Editor·SDK·NDK·JDK 절대 경로는 코드에 저장하지 않는다.
+
+### 컴파일과 EditMode 테스트
+
+- Unity 6.3 최초 import 및 최종 재검증에서 컴파일 오류 0개.
+- 결과 XML: `Build/Migration/6000.3-final-editmode-results.xml` (Git 제외 경로)
+- 최종 EditMode 결과: **총 19개 / 통과 19개 / 실패 0개 / 건너뜀 0개**
+- 테스트 실행 시간: 0.0452692초
+- 테스트 범위: WorkScheduler 4개, GameDataState 5개, UpgradeService 10개.
+
+기존 `FindObjectOfType`, `Rigidbody.velocity`, NavMeshLink 및 구 Google Play Games `Social` API 관련 obsolete 경고는 남아 있다. Unity 6.3에서 오류로 바뀐 API는 없었고, 동작 변경 위험이 있는 일괄 리팩터링은 엔진 전환과 분리했다.
+
+### Android 자동 빌드 검증
+
+| 항목 | Development APK | Release validation AAB |
+| --- | --- | --- |
+| 출력 | `Churub-v1.1.0-development.apk` | `Churub-v1.1.0-release-validation.aab` |
+| 파일 크기 | 116,836,015 bytes | 93,206,998 bytes |
+| SHA-256 | `FDB60BA0F995712E2CFEEFC811BFDC54C2C01DCCC2E97F25304FB4C713E5C934` | `9510E7E2EF5218B6976F510C256A4DD2FD1A7C023AEDE2AF1BDC2F290C1B5BA3` |
+| Package / version | `com.Churub.ChurubFactory`, 73 / `1.1.0` | `com.Churub.ChurubFactory`, 73 / `1.1.0` |
+| SDK | min 25 / target 36 | min 25 / target 36 |
+| ABI | arm64-v8a, armeabi-v7a | arm64-v8a, armeabi-v7a |
+| IL2CPP | 양쪽 ABI `libil2cpp.so` 확인 | 양쪽 ABI `libil2cpp.so` 확인 |
+| Debuggable | true | false |
+
+Release validation AAB는 bundletool validation과 JAR 서명 무결성 검사를 통과했지만 운영 키로 서명한 출시 파일은 아니다. Manifest에는 `AD_ID`, `INTERNET` 등 SDK 권한 외에 legacy storage와 `READ_PHONE_STATE` 권한도 병합되어 있어 출시 전 Play 정책 검토 대상으로 둔다.
+
+이 빌드에서 Unity 6.3 validator가 `unityLibrary/build.gradle`의 `common.gradle` include 누락을 경고했다. Unity 6.3 기본 템플릿과 비교해 `apply from: '../shared/common.gradle'`을 추가했으나, 변경 후 Clean AAB 재빌드는 라이선스 종료 코드 198과 `Unity Editor Software Terms` 사용자 동의 창 때문에 실행하지 못했다. 따라서 위 APK/AAB 결과는 템플릿 한 줄을 추가하기 전 결과이며 변경 후 빌드 성공을 주장하지 않는다.
+
+### 변경 파일 범주와 이유
+
+| 범주 | 파일 | 이유 |
+| --- | --- | --- |
+| Editor 버전 | `ProjectSettings/ProjectVersion.txt` | Unity 6.3.23f1 확정 |
+| 패키지 | `Packages/manifest.json`, `Packages/packages-lock.json` | Unity 6.3 호환 공식 패키지 해석 |
+| Android 설정 | `ProjectSettings/ProjectSettings.asset`, `ProjectSettings/AndroidResolverDependencies.xml` | API 36, minSdk 25, Ads 4.19 의존성 |
+| Android 템플릿 | `Assets/Plugins/Android/mainTemplate.gradle` | Unity 6.3 기본 shared Gradle 적용과 EDM4U 의존성 유지 |
+| Build Profile | `Assets/Settings/Build Profiles/*` | Development APK와 Release AAB 설정 분리 |
+| 빌드 자동화 | `Assets/Editor/PortfolioBuild.cs`, `Assets/Editor/Unity63Migration.cs` | Unity 6.3 Build Profile API, 버전 기반 출력, 서명 환경변수 적용 |
+| Editor 플러그인 | Rainbow Folders DLL meta | Unity 6.3에서만 호환되지 않는 Editor DLL 비활성화 |
+| 에셋 metadata | 텍스처 `.meta` 199개 | Unity 6.3 importer 자동 재직렬화, GUID 유지 |
+| 저장소 제외 | `.gitignore` | Unity `.utmp` 임시 빌드 산출물 제외 |
+
+### 남은 위험, 성능 및 롤백
+
+남아 있는 위험은 다음과 같다.
+
+- `common.gradle` 보정 후 Android Clean Build가 아직 실행되지 않았다.
+- Google Play Games, 광고, BackEnd 및 인앱 업데이트는 Unity 6.3에서 컴파일·패키징됐지만 실제 계정과 기기에서 초기화·로그인·콜백을 검증하지 않았다.
+- Unity 6.3 최소 지원 버전에 따라 minSdk가 24에서 25로 올라가므로 Android 7.0(API 24) 단말은 새 빌드를 설치할 수 없다.
+- 병합 Manifest의 legacy storage와 `READ_PHONE_STATE` 권한은 출시 전 SDK 기여 경로와 Play 정책을 확인해야 한다.
+- Google Play Games와 일부 게임 코드에 obsolete API 경고가 남아 있어 향후 Unity 또는 플러그인 업데이트에서 오류로 바뀔 수 있다.
+- Rainbow Folders는 Unity 6.3에서 비활성화 상태다. 필요한 경우 Unity 6.3 호환 버전을 정상 라이선스로 확보해 별도 업데이트한다.
+
+동일 Android 기기를 확보하지 못해 Unity 2021과 Unity 6.3의 로딩 시간, FPS, frame time, GC Alloc, 메모리, 발열 및 장시간 안정성은 비교하지 않았다. 측정하지 않은 성능 개선을 주장하지 않는다.
+
+게임 코드의 obsolete API는 이번 전환에서 제거하거나 일괄 치환하지 않았다. 현재 컴파일을 막는 API만 처리한다는 원칙을 적용했으며 세이브 키·직렬화 구조·프리팹 API 마이그레이션은 발생하지 않았다.
+
+롤백이 필요하면 `v1.1.0` 태그를 이동하지 않고 별도 브랜치나 worktree에서 기준 커밋 `e1ecee13ba4985a94721f9ba696e2562d4b4c919`을 연다. 중간 Unity 6.0 상태는 커밋 `cd1239ccfb6270f31f9bd5cbb660bbb03116f299`에서 재현할 수 있다. Unity 6.3 엔진 변경은 `e5f224052c332aab60cae529f19e7d560fdbd99b`, Android 파이프라인 변경은 `bea58a25030f2edea8ec7809cd73c9a6719dcd8a`를 역순으로 revert한다. 기존 세이브 데이터나 운영 서명 키는 롤백 과정에서 수정하지 않는다.
+
+후속 개선 후보는 Google Play Games/EDM4U/BackEnd 등 외부 SDK 업데이트, obsolete API 정리, Android 권한 축소 및 Rainbow Folders 교체다. Built-in → URP 전환은 성능·화면 비교 기준을 별도로 확보한 독립 작업으로만 진행한다.
+
 ## 0단계 완료 조건 판정
 
 | 완료 조건 | 판정 |
@@ -324,13 +436,19 @@ Unity 6.0 기본 Android 템플릿과 기존 커스텀 템플릿을 비교하며
 | 현재 패키지와 Android 설정 문서화 | 충족(Managed Stripping 실제 해석 값은 재확인 필요) |
 | 기준선 테스트 가능 여부 기록 | 충족 — 19/19 통과 |
 | 기준선 빌드 가능 여부 기록 | 충족 — Android Development APK 생성 및 정적 검증 완료 |
-| Unity 라이선스 정상 활성 상태 확인 | 충족 — 제한 밖 재실행에서 정상 초기화 |
+| Unity 라이선스 정상 활성 상태 확인 | 기준선 실행 당시 충족. 2026-09-04 재빌드 시 갱신 필요 상태 확인 |
 
-0단계 완료 조건은 충족했다. 1단계 중 자동화 가능한 컴파일·EditMode 테스트·Android 개발 빌드는 완료했으나, 실제 플레이·세이브·기기 성능 기준선은 연결된 Android 기기가 없어 미실행이다. 이 항목들은 통과로 간주하지 않으며 7~8단계의 출시 판정을 보류시키는 필수 잔여 검증으로 관리한다.
+0단계와 Unity 2021 기준선 자동 검증은 당시 정상 라이선스로 완료했다. Unity 6.3의 컴파일·EditMode 테스트·Development APK·Release validation AAB도 한 차례 완료했지만, 마지막 Gradle 템플릿 보정 후 재빌드는 현재 라이선스 상태 때문에 유예했다. 실제 플레이·세이브·기기 성능은 연결된 Android 기기가 없어 미실행이며 통과로 간주하지 않는다.
 
-## 다음 작업
+## 남은 작업
 
-1. Unity 6000.3.22f1 및 Android 모듈을 설치하고 Built-in Render Pipeline 상태로 최종 전환한다.
-2. Unity 6.3 기본 Android 템플릿과 커스텀 변경을 다시 비교하고 API 36 Release AAB를 생성한다.
-3. Build Profiles와 `PortfolioBuild.cs`의 Development/Release 책임 및 출력 이름을 정리한다.
-4. 실제 Android 기기가 연결되면 기준 세이브, 핵심 플레이, 외부 서비스, 생명주기 및 성능 검증을 수행한다.
+엔진 전환과 엔진 관련 리팩터링, 변경 diff 검토 및 논리적 커밋은 완료됐다. 현재 엔진 전환 작업 범위에 남은 구현 작업은 없다.
+
+다음 항목은 실제 출시 빌드 시점으로 유예한다.
+
+1. Unity Hub에서 Software Terms 동의와 라이선스 갱신 후 `common.gradle` 보정이 포함된 API 36 AAB를 Clean Build한다.
+2. Unity 2021 기준 세이브, 핵심 플레이, Google Play, 광고, BackEnd, 인앱 업데이트 및 Android 생명주기를 실제 기기에서 검증한다.
+3. 기존 운영 키를 저장소 밖에서 제공해 서명 AAB를 생성하고 Play Console 내부 테스트·사전 검사를 수행한다.
+4. 필요할 때 동일 기기 조건으로 성능을 비교한다. 상세 성능 측정 결과 없이 Unity 6의 성능 개선을 주장하지 않는다.
+
+출시 검증 전에는 `main` 병합, 앱 버전 `1.2.0` 변경 또는 새 릴리스 태그 생성을 수행하지 않는다. URP 전환은 별도 후속 작업으로 유지한다.
