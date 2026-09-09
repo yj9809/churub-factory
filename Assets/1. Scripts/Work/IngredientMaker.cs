@@ -29,15 +29,17 @@ public class IngredientMaker : MonoBehaviour, IStackable
 
     private void Start()
     {
+        objSpawnTime = Churub.Core.BalanceTable.IngredientInterval;
+        maxObj = Churub.Core.BalanceTable.IngredientCapacity;
         gm = GameManager.Instance;
-        gm.AddStackable(this); // ¸®½ºÆ®¿¡ Ãß°¡
+        gm.AddStackable(this); // ë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€
     }
 
     private void Update()
     {
         SpawnGameObject();
 
-        // Å¸°Ù ¾÷µ¥ÀÌÆ® ·ÎÁ÷
+        // íƒ€ê²Ÿ ì—…ë°ì´íŠ¸ ë¡œì§
         if (ChuruStack.Count == 0)
         {
             gm.UpdateTargets();

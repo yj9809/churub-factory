@@ -18,7 +18,8 @@ namespace Churub.Core
         InsufficientGold,
         MaxLevel,
         InvalidUpgrade,
-        InvalidState
+        InvalidState,
+        Locked
     }
 
     public readonly struct UpgradeProgress
@@ -69,19 +70,7 @@ namespace Churub.Core
 
     public sealed class UpgradeService
     {
-        public const int EmployeeLimit = 3;
-        private const int StandardUpgradeLimit = 5;
-
-        private const float BasePlayerSpeed = 5f;
-        private const float BasePlayerCartSpeed = 2.5f;
-        private const float BaseGoldPerBox = 50f;
-        private const float BaseEmployeeSpeed = 3f;
-        private const float BaseEmployeeCartSpeed = 1.5f;
-
-        private static readonly float[] SpeedMultipliers = { 1.1f, 1.2f, 1.3f, 1.4f, 1.5f };
-        private static readonly int[] SpeedCosts = { 500, 1000, 3000, 5000, 10000 };
-        private static readonly float[] GoldPerBoxMultipliers = { 1.2f, 1.4f, 1.6f, 1.8f, 2f };
-        private static readonly int[] GoldPerBoxCosts = { 5000, 7000, 10000, 20000, 30000 };
+        public const int EmployeeLimit = BalanceTable.EmployeeLimit;
 
         private readonly GameDataState state;
 
@@ -130,7 +119,7 @@ namespace Churub.Core
             }
 
             UpgradeProgress progress = GetProgress(type);
-            if (progress.Level < 0 || progress.Cost <= 0 || progress.MaxLevel <= 0)
+            if (progress.Level < 0 || progress.MaxLevel <= 0 || float.IsNaN(state.PlayerGold) || float.IsInfinity(state.PlayerGold))
             {
                 return UpgradePurchaseStatus.InvalidState;
             }
@@ -139,6 +128,9 @@ namespace Churub.Core
             {
                 return UpgradePurchaseStatus.MaxLevel;
             }
+
+            if (BalanceTable.UpgradeLock(state, type, progress.Level) != null)
+                return UpgradePurchaseStatus.Locked;
 
             return state.PlayerGold < progress.Cost
                 ? UpgradePurchaseStatus.InsufficientGold
@@ -149,54 +141,14 @@ namespace Churub.Core
         {
             switch (type)
             {
-                case UpgradeType.PlayerSpeed:
-                    state.PlayerSpeed = BasePlayerSpeed * SpeedMultipliers[currentLevel];
-                    state.PlayerCartSpeed = BasePlayerCartSpeed * SpeedMultipliers[currentLevel];
-                    state.SpeedUpgradeCount++;
-                    state.SpeedUpgradeCost = GetNextCost(SpeedCosts, currentLevel, state.SpeedUpgradeCost);
-                    break;
-
-                case UpgradeType.PlayerMaxStack:
-                    state.PlayerMaxStackCount++;
-                    state.MaxStackUpgradeCount++;
-                    state.MaxStackUpgradeCost *= 2;
-                    break;
-
-                case UpgradeType.GoldPerBox:
-                    state.PlayerGoldPerBox = BaseGoldPerBox * GoldPerBoxMultipliers[currentLevel];
-                    state.GoldPerBoxUpgradeCount++;
-                    state.GoldPerBoxUpgradeCost = GetNextCost(
-                        GoldPerBoxCosts,
-                        currentLevel,
-                        state.GoldPerBoxUpgradeCost);
-                    break;
-
-                case UpgradeType.EmployeeSpeed:
-                    state.EmployeeSpeed = BaseEmployeeSpeed * SpeedMultipliers[currentLevel];
-                    state.EmployeeCartSpeed = BaseEmployeeCartSpeed * SpeedMultipliers[currentLevel];
-                    state.EmployeeSpeedUpgradeCount++;
-                    state.EmployeeSpeedUpgradeCost = GetNextCost(
-                        SpeedCosts,
-                        currentLevel,
-                        state.EmployeeSpeedUpgradeCost);
-                    break;
-
-                case UpgradeType.EmployeeMaxStack:
-                    state.EmployeeMaxStackCount++;
-                    state.EmployeeMaxStackUpgradeCount++;
-                    state.EmployeeMaxStackUpgradeCost *= 2;
-                    break;
-
-                case UpgradeType.EmployeeAdd:
-                    state.EmployeeAddCount++;
-                    state.EmployeeAddCost = state.EmployeeAddCount >= EmployeeLimit
-                        ? 25000
-                        : state.EmployeeAddCost * 2;
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+                case UpgradeType.PlayerSpeed: state.SpeedUpgradeCount++; break;
+                case UpgradeType.PlayerMaxStack: state.MaxStackUpgradeCount++; break;
+                case UpgradeType.GoldPerBox: state.GoldPerBoxUpgradeCount++; break;
+                case UpgradeType.EmployeeSpeed: state.EmployeeSpeedUpgradeCount++; break;
+                case UpgradeType.EmployeeMaxStack: state.EmployeeMaxStackUpgradeCount++; break;
+                case UpgradeType.EmployeeAdd: state.EmployeeAddCount++; break;
             }
+            BalanceTable.Synchronize(state);
         }
 
         private int GetLevel(UpgradeType type)
@@ -213,35 +165,8 @@ namespace Churub.Core
             }
         }
 
-        private int GetCost(UpgradeType type)
-        {
-            switch (type)
-            {
-                case UpgradeType.PlayerSpeed: return state.SpeedUpgradeCost;
-                case UpgradeType.PlayerMaxStack: return state.MaxStackUpgradeCost;
-                case UpgradeType.GoldPerBox: return state.GoldPerBoxUpgradeCost;
-                case UpgradeType.EmployeeSpeed: return state.EmployeeSpeedUpgradeCost;
-                case UpgradeType.EmployeeMaxStack: return state.EmployeeMaxStackUpgradeCost;
-                case UpgradeType.EmployeeAdd: return state.EmployeeAddCost;
-                default: throw new ArgumentOutOfRangeException(nameof(type), type, null);
-            }
-        }
-
-        private int GetMaxLevel(UpgradeType type)
-        {
-            if (type == UpgradeType.EmployeeAdd)
-            {
-                return EmployeeLimit;
-            }
-
-            return Math.Min(state.UpgradeMaxCount, StandardUpgradeLimit);
-        }
-
-        private static int GetNextCost(int[] costs, int currentLevel, int currentCost)
-        {
-            int nextLevel = currentLevel + 1;
-            return nextLevel < costs.Length ? costs[nextLevel] : currentCost;
-        }
+        private int GetCost(UpgradeType type) => BalanceTable.Cost(type, GetLevel(type));
+        private int GetMaxLevel(UpgradeType type) => BalanceTable.MaxLevel(type);
 
         private static UpgradePurchaseResult Failure(
             UpgradePurchaseStatus status,

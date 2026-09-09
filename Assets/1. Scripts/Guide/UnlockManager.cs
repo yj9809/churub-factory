@@ -28,6 +28,10 @@ public class UnlockManager : MonoBehaviour
     [TitleGroup("UI"), SerializeField] private Image _FillImage;
     [TitleGroup("UI"), ProgressBar(0, 100), SerializeField] private float currentFill;
     private int amount;
+    public bool IsPurchased => isUnlocked || (baseCost != null && baseCost.IsUnlocked(unlockType.ToString()));
+    private string lockReason;
+    private Coroutine unlockRoutine;
+    private TMPro.TMP_Text[] priceLabels;
 
     private const float unlockTime = 3.0f;
     private bool isTrigger = false;
@@ -42,23 +46,21 @@ public class UnlockManager : MonoBehaviour
         player = GameManager.Instance.P;
         baseCost = DataManager.Instance.baseCost;
         audioManager = AudioManager.Instance;
-        UIManager.Instance.storeUpgradeButton.onClick.AddListener(UnlockStore);
+        if (unlockType == UnlockType.Store)
+            UIManager.Instance.storeUpgradeButton.onClick.AddListener(UnlockStore);
 
         _Object.SetActive(false);
         CheckUnlockStatus();
 
-        unlockAmount = new Dictionary<UnlockType, int>
-        {
-            { UnlockType.Office, 2500 },
-            { UnlockType.Container1, 1000 },
-            { UnlockType.Machine1, 5000 },
-            { UnlockType.Container2, 5000 },
-            { UnlockType.Machine2, 10000 },
-            { UnlockType.Stall, 10000 },
-            { UnlockType.Store, 20000 }
-        };
+        amount = BalanceTable.FacilityCost(unlockType.ToString());
+        priceLabels = GetComponentsInChildren<TMPro.TMP_Text>(true);
+    }
 
-        amount = unlockAmount[unlockType];
+    private void Update()
+    {
+        lockReason = BalanceTable.FacilityLock(baseCost, unlockType.ToString());
+        foreach (var label in priceLabels)
+            label.text = lockReason ?? amount.ToString();
     }
 
     private void Start()
@@ -73,18 +75,19 @@ public class UnlockManager : MonoBehaviour
     {
         if (baseCost.IsUnlocked(unlockType.ToString()))
         {
+            isUnlocked = true;
             _Object.SetActive(true);
             DisableObjects();
             gameObject.SetActive(false);
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerStay(Collider other)
     {
-        if (other.CompareTag("Player") && !isUnlocked && player.Gold >= amount)
+        if (other.CompareTag("Player") && !IsPurchased && unlockRoutine == null && player.Gold >= amount && BalanceTable.FacilityLock(baseCost, unlockType.ToString()) == null)
         {
             isTrigger = true;
-            StartCoroutine(UnlockProcess(currentFill));
+            unlockRoutine = StartCoroutine(UnlockProcess(currentFill));
         }
     }
 
@@ -101,7 +104,7 @@ public class UnlockManager : MonoBehaviour
         currentFill = updateProcess;
         float fillRate = 100f / unlockTime;
 
-        while (currentFill < 100 && isTrigger)
+        while (currentFill < 100 && isTrigger && player.Gold >= amount && BalanceTable.FacilityLock(baseCost, unlockType.ToString()) == null)
         {
             currentFill += fillRate * Time.deltaTime;
             UpdateUnlockUI(currentFill / 100);
@@ -112,10 +115,12 @@ public class UnlockManager : MonoBehaviour
         {
             ActivateObject();
         }
+        unlockRoutine = null;
     }
 
     private void ActivateObject()
     {
+        if (IsPurchased || BalanceTable.FacilityLock(baseCost, unlockType.ToString()) != null || !UIManager.Instance.SpendGold(amount)) return;
         foreach (Transform item in transform)
         {
             item.gameObject.SetActive(false);
@@ -126,8 +131,8 @@ public class UnlockManager : MonoBehaviour
         AnimateObject();
 
         isUnlocked = true;
-        UIManager.Instance.SpendGold(amount);
         UpdateProgress();
+        DataManager.Instance.GameDataUpdate();
     }
 
     private void AnimateObject()
@@ -144,6 +149,7 @@ public class UnlockManager : MonoBehaviour
 
     private void UpdateProgress()
     {
+        baseCost.SetUnlocked(unlockType.ToString(), true);
         switch (unlockType)
         {
             case UnlockType.Office:
@@ -152,12 +158,12 @@ public class UnlockManager : MonoBehaviour
                 break;
             case UnlockType.Container1:
             case UnlockType.Container2:
-                UpdateContainerProgress();
+
                 DisableWall();
                 break;
             case UnlockType.Machine1:
             case UnlockType.Machine2:
-                UpdateMachineProgress();
+
                 break;
             case UnlockType.Stall:
                 baseCost.SetUnlocked(GameDataSchema.Progress.Stall, true);
@@ -167,30 +173,6 @@ public class UnlockManager : MonoBehaviour
                 baseCost.SetUnlocked(GameDataSchema.Progress.Store, true);
                 DisableObjects();
                 break;
-        }
-    }
-
-    private void UpdateContainerProgress()
-    {
-        if (!baseCost.IsUnlocked(GameDataSchema.Progress.Container1))
-        {
-            baseCost.SetUnlocked(GameDataSchema.Progress.Container1, true);
-        }
-        else if (!baseCost.IsUnlocked(GameDataSchema.Progress.Container2))
-        {
-            baseCost.SetUnlocked(GameDataSchema.Progress.Container2, true);
-        }
-    }
-
-    private void UpdateMachineProgress()
-    {
-        if (!baseCost.IsUnlocked(GameDataSchema.Progress.Machine1))
-        {
-            baseCost.SetUnlocked(GameDataSchema.Progress.Machine1, true);
-        }
-        else if (!baseCost.IsUnlocked(GameDataSchema.Progress.Machine2))
-        {
-            baseCost.SetUnlocked(GameDataSchema.Progress.Machine2, true);
         }
     }
 
@@ -204,17 +186,14 @@ public class UnlockManager : MonoBehaviour
 
     private void UnlockStore()
     {
-        if (player.Gold >= amount)
-        {
-            if (unlockType == UnlockType.Stall)
-            {
-                _Object.SetActive(false);
-            }
-            else if (unlockType == UnlockType.Store)
-            {
-                ActivateObject();
-            }
-        }
+        if (unlockType == UnlockType.Store) ActivateObject();
+    }
+
+    private void OnDestroy()
+    {
+        var ui = FindObjectOfType<UIManager>();
+        if (unlockType == UnlockType.Store && ui != null && ui.storeUpgradeButton != null)
+            ui.storeUpgradeButton.onClick.RemoveListener(UnlockStore);
     }
 
     private void DisableWall()

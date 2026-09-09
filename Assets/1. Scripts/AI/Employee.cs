@@ -63,6 +63,10 @@ public class Employee : MonoBehaviour
         set { cbTransNum = value; }
     }
 
+    private int transportRole;
+    private float pickupStarted = -1f;
+    public void SetTransportRole(int index) { transportRole = index == 0 ? 0 : 1; }
+
     private bool cbTransNumCheck = false;
     public bool CbTransNumCheck
     {
@@ -175,6 +179,14 @@ public class Employee : MonoBehaviour
     }
     private void ChangeTarget()
     {
+        if (currentTarget != null)
+        {
+            if (pickupStarted < 0f) pickupStarted = Time.time;
+            int carried = ingredientStack.Count + churuStack.Count;
+            // Pick up the stock that already exists without waiting for future production.
+            if (carried < MaxObjStackCount && currentTarget.GetStackCount() > 0 && Time.time - pickupStarted < .5f) return;
+        }
+
         if (ingredientStack.Count > 0)
         {
             if (currentTarget != null)
@@ -225,10 +237,11 @@ public class Employee : MonoBehaviour
         {
             if (!moving)
             {
-                if (gm.TryReserveWork(out var bestTarget))
+                if (gm.TryReserveWork(out var bestTarget, transportRole))
                 {
                     target = bestTarget.GetTransform();
                     currentTarget = bestTarget;
+                    pickupStarted = -1f;
                     moving = true;
                 }
             }
@@ -277,7 +290,7 @@ public class Employee : MonoBehaviour
 
     public void TakeObject(IngredientMaker im)
     {
-        if (im.ChuruStack.Count > 0 && MaxObjStackCount > ingredientStack.Count && boxStack.Count <= 0)
+        if (transportRole == 0 && ReferenceEquals(currentTarget, im) && im.ChuruStack.Count > 0 && MaxObjStackCount > ingredientStack.Count && churuStack.Count == 0 && boxStack.Count <= 0)
         {
             Utility.ObjectDrop(cartTransform, null, im.ChuruStack, ingredientStack, 1);
         }
@@ -295,7 +308,7 @@ public class Employee : MonoBehaviour
     {
         Stack<GameObject> newStack = isChuru ? churuStack : boxStack;
 
-        if (bs.BoxStack.Count > 0 && MaxObjStackCount > newStack.Count && ingredientStack.Count <= 0)
+        if (transportRole == 1 && isChuru && ReferenceEquals(currentTarget, bs) && bs.BoxStack.Count > 0 && MaxObjStackCount > newStack.Count && ingredientStack.Count <= 0)
         {
             Utility.ObjectDrop(cartTransform, null, bs.BoxStack, newStack, 1);
         }

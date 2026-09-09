@@ -39,7 +39,7 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
     private PackagingType packaging = PackagingType.On;
 
     private int count = 0;
-    private const int maxCount = 5;
+    private const int maxCount = Churub.Core.BalanceTable.ItemsPerBox;
 
     private void Start()
     {
@@ -120,7 +120,7 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
     }
     private void BoxMove()
     {
-        if(count == 5)
+        if(count == maxCount)
         {
             newBox.AddComponent<Rigidbody>();
             newBox.transform.DOMove(packagingBoxParent.position, 0.3f).SetEase(Ease.InBack)

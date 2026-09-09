@@ -61,6 +61,21 @@ public sealed class WorkSchedulerTests
         Assert.That(target, Is.Null);
     }
 
+    [Test]
+    public void RoleFilter_DoesNotReserveWorkForAnotherRole()
+    {
+        var scheduler = new WorkScheduler<FakeWorkTarget>();
+        var raw = new FakeWorkTarget(3);
+        var processed = new FakeWorkTarget(30);
+        scheduler.Register(raw);
+        scheduler.Register(processed);
+        Assert.That(scheduler.TryReserveBest(out var first, candidate => candidate == raw), Is.True);
+        Assert.That(first, Is.SameAs(raw));
+        Assert.That(scheduler.IsReserved(processed), Is.False);
+        Assert.That(scheduler.TryReserveBest(out var second, candidate => candidate == processed), Is.True);
+        Assert.That(second, Is.SameAs(processed));
+    }
+
     private sealed class FakeWorkTarget : IWorkTarget
     {
         private readonly int stackCount;

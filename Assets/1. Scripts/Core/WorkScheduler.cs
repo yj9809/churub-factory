@@ -29,14 +29,14 @@ namespace Churub.Core
             reservations.Remove(target);
         }
 
-        public bool TryReserveBest(out T target)
+        public bool TryReserveBest(out T target, System.Predicate<T> eligible = null)
         {
             target = null;
             var highestStackCount = 0;
 
             foreach (var candidate in targets)
             {
-                if (candidate == null || reservations.Contains(candidate))
+                if (candidate == null || reservations.Contains(candidate) || (eligible != null && !eligible(candidate)))
                 {
                     continue;
                 }

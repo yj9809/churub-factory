@@ -160,9 +160,18 @@ public class UIManager : Singleton<UIManager>
         UpgradeType type = (UpgradeType)num;
         UpgradeProgress progress = upgradeService.GetProgress(type);
 
+        string locked = BalanceTable.UpgradeLock(baseCost, type, progress.Level);
+        Button button = upgradeCostText[num].GetComponentInParent<Button>();
+        if (button != null)
+        {
+            bool hidden = (type == UpgradeType.EmployeeSpeed || type == UpgradeType.EmployeeMaxStack) &&
+                progress.Level == 0 && locked != null;
+            button.gameObject.SetActive(!hidden);
+            button.interactable = !progress.IsMaxLevel && locked == null;
+        }
         upgradeCostText[num].text = progress.IsMaxLevel
             ? "Max"
-            : ChangeNumbet(progress.Cost.ToString());
+            : locked ?? ChangeNumbet(progress.Cost.ToString());
 
         if (upgradeStepSprite.Length <= 0)
         {
@@ -243,20 +252,45 @@ public class UIManager : Singleton<UIManager>
             EmployeeCreationResult creationResult = employeeFactory.TryCreate(result.CreatesPackagingEmployee);
             if (!creationResult.Succeeded)
             {
+                baseCost.PlayerGold += result.SpentGold;
+                baseCost.EmployeeAddCount = result.PreviousLevel;
+                BalanceTable.Synchronize(baseCost);
                 HandleEmployeeCreationFailure(creationResult.Status);
                 return;
             }
         }
 
+        p.ObjectDataSave();
         audioManager.PlayEffect(EffectType.Upgrade);
+        DataManager.Instance.GameDataUpdate();
         UpdateGoldUI();
-        UpgradeTextUpdate(num);
+        StartUpgradeTextUpdate();
+    }
+
+    public bool ClaimFirstEmployee()
+    {
+        if (employeeFactory == null || !BalanceTable.CanClaimEmployee(baseCost)) return false;
+        var created = employeeFactory.TryCreate(false);
+        if (!created.Succeeded)
+        {
+            HandleEmployeeCreationFailure(created.Status);
+            return false;
+        }
+        // No asynchronous operation between eligibility and commit.
+        BalanceTable.ClaimEmployee(baseCost);
+        p.ObjectDataSave();
+        DataManager.Instance.GameDataUpdate();
+        UpdateGoldUI();
+        return true;
     }
 
     private void HandleUpgradeFailure(UpgradePurchaseStatus status)
     {
         switch (status)
         {
+            case UpgradePurchaseStatus.Locked:
+                LogMessage("해금 조건을 먼저 달성해주세요.");
+                break;
             case UpgradePurchaseStatus.MaxLevel:
                 LogMessage("최대 업그레이드 입니다.");
                 break;
@@ -294,6 +328,10 @@ public class UIManager : Singleton<UIManager>
     public void ShowStoreUI()
     {
         storePanel.SetActive(true);
+        string reason = BalanceTable.FacilityLock(baseCost, "Store");
+        storeUpgradeButton.interactable = reason == null && !baseCost.IsUnlocked("Store");
+        var label = storeUpgradeButton.GetComponentInChildren<TMP_Text>();
+        if (label != null) label.text = reason ?? ("상점 " + BalanceTable.FacilityCost("Store") + " 골드");
     }
     public void CloseStoreUI()
     {

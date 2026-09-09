@@ -37,6 +37,8 @@ public class Truck : MonoBehaviour, IObjectDataSave
     public Transform BoxLoadingTransform { get { return boxLoadingTransform; } }
 
 
+    public bool CanLoad => workPoint.activeInHierarchy && boxStack.Count < Churub.Core.BalanceTable.TruckCapacity;
+
     private int currentCheckPoint = 1;
 
     // Start is called before the first frame update
@@ -54,7 +56,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
     // Update is called once per frame
     void Update()
     {
-        if(boxStack.Count >= 5)
+        if(boxStack.Count >= Churub.Core.BalanceTable.TruckCapacity)
         {
             workPoint.SetActive(false);
             boxCountTxt.gameObject.SetActive(false);
@@ -65,6 +67,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
             Debug.Log($"gold : {gm.P.GoldPerBox}, buff : {gm.P.buffGold}");
             UIManager.Instance.AddGold(boxStack.Count * (int)(gm.P.GoldPerBox + (gm.P.GoldPerBox * gm.P.buffGold)));
             ClearBoxStack();
+            data.baseCost.SetUnlocked(Churub.Core.BalanceTable.FirstSaleKey, true);
         }
 
         if (ct == CarType.Go)
@@ -147,7 +150,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
     }
     public void BoxCountTextUpdate()
     {
-        boxCountTxt.text = $"{boxStack.Count} / 5";
+        boxCountTxt.text = $"{boxStack.Count} / {Churub.Core.BalanceTable.TruckCapacity}";
     }
     private void ClearBoxStack()
     {
@@ -165,7 +168,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
 
     public void ObjectDataSave()
     {
-        if(boxStack.Count <= 4)
+        if(boxStack.Count < Churub.Core.BalanceTable.TruckCapacity)
             data.baseCost.TruckBoxCount = boxStack.Count;
     }
 }

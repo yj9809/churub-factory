@@ -123,7 +123,13 @@ public class GameManager : Singleton<GameManager>
     {
         List<GameObject> employeesToRemove = new List<GameObject>();
         int employeeNum = 0;
-        foreach (var item in employee)
+        var savedOrder = new List<GameObject>();
+        foreach (var name in data.baseCost.employeeList)
+        {
+            var prefab = employee.Find(candidate => candidate != null && candidate.name == name);
+            if (prefab != null) savedOrder.Add(prefab);
+        }
+        foreach (var item in savedOrder)
         {
             if (data.baseCost.employeeList.Contains(item.name))
             {
@@ -143,6 +149,7 @@ public class GameManager : Singleton<GameManager>
                 }
                 DontDestroyOnLoad(newEmployee);
                 newEmployee.name = item.name;
+                newEmployee.GetComponent<Employee>().SetTransportRole(employeeNum);
                 P.employee.Add(newEmployee.GetComponent<Employee>());
                 employeesToRemove.Add(item);
                 employeeNum++;
@@ -187,14 +194,16 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
-    public bool TryReserveWork(out IStackable stackable)
+    public bool TryReserveWork(out IStackable stackable, int role = -1)
     {
         foreach (var target in stackCount)
         {
             workScheduler.Register(target);
         }
 
-        return workScheduler.TryReserveBest(out stackable);
+        return workScheduler.TryReserveBest(out stackable, candidate =>
+            candidate is Component component && component.gameObject.activeInHierarchy &&
+            (role < 0 || candidate.GetTypeNum() == role));
     }
 
     // �������� Ÿ���� �ٸ� ���������� ����� �ٸ� Ÿ���� ã��

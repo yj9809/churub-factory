@@ -131,7 +131,7 @@ public class Player : MonoBehaviour, IObjectDataSave
 
             Vector3 adjustedDirection = (moveDirection.z * cameraForward + moveDirection.x * cameraRight).normalized;
 
-            float currentSpeed = animator.GetFloat("Blend") == 1? CartSpeed + buffSpeed : BaseSpeed + buffSpeed;
+            float currentSpeed = animator.GetFloat("Blend") == 1? CartSpeed * (1f + buffSpeed) : BaseSpeed * (1f + buffSpeed);
             animator.SetBool("isMove", true);
 
             cc.Move(adjustedDirection * currentSpeed * Time.deltaTime);
@@ -225,7 +225,7 @@ public class Player : MonoBehaviour, IObjectDataSave
     // 이건 트럭에 박스 옮기는 코드
     public void GiveObject(Truck tr)
     {
-        if (boxStack.Count > 0 && ingredientStack.Count <= 0)
+        if (boxStack.Count > 0 && ingredientStack.Count <= 0 && tr.CanLoad)
         {
             Utility.ObjectDrop(tr.BoxLoadingTransform, null, boxStack, tr.BoxStack, 3);
             tr.BoxCountTextUpdate();
@@ -247,7 +247,7 @@ public class Player : MonoBehaviour, IObjectDataSave
 
     private void OnCollisionEnter(Collision collision)
     {
-        if(collision.gameObject.CompareTag("Ingredient"))
+        if(collision.gameObject.CompareTag("Ingredient") && ingredientStack.Count < MaxObjStackCount + buffMaxObjStackCount && churuStack.Count == 0 && boxStack.Count == 0)
         {
             Debug.Log("실행");
             Rigidbody rd = collision.transform.GetComponent<Rigidbody>();

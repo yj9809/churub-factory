@@ -33,14 +33,15 @@ public class ConveyorBelt : MonoBehaviour
         set { placeObjectTime = value; }
     }
 
-    private float breakDownProb = 0.03f;
+    private float breakDownProb = Churub.Core.BalanceTable.BreakdownProbability;
     public float BreakDownProb
     {
         get { return breakDownProb; }
         set { breakDownProb = value; }
     }
 
-    private float nonBreakDownTime = 300f;
+    private float nonBreakDownTime = Churub.Core.BalanceTable.BreakdownProtection;
+    private bool breakdownUnlocked;
 
     private bool isOn = true;
     private bool isBreakDown = false;
@@ -81,8 +82,14 @@ public class ConveyorBelt : MonoBehaviour
             isOn = true;
         }
 
-        if (nonBreakDownTime >= 0)
-            nonBreakDownTime -= Time.deltaTime;
+        var state = DataManager.Instance.baseCost;
+        bool eligible = state.EmployeeAddCount >= 2 && Churub.Core.BalanceTable.Lines(state) >= 2;
+        if (!breakdownUnlocked && eligible)
+        {
+            breakdownUnlocked = true;
+            nonBreakDownTime = Churub.Core.BalanceTable.BreakdownProtection;
+        }
+        if (breakdownUnlocked && nonBreakDownTime >= 0) nonBreakDownTime -= Time.deltaTime;
     }
 
     private IEnumerator PlaceObject()
@@ -91,7 +98,7 @@ public class ConveyorBelt : MonoBehaviour
         {
             float randomValue = Random.value;
             yield return new WaitForSeconds(placeObjectTime);
-            if(cbStack.Count > 0 && randomValue < breakDownProb && nonBreakDownTime <=0)
+            if(breakdownUnlocked && cbStack.Count > 0 && randomValue < breakDownProb && nonBreakDownTime <=0)
             {
                 BreakDownEvent();
             }
@@ -148,7 +155,7 @@ public class ConveyorBelt : MonoBehaviour
     {
         isBreakDown = false;
         eventGauge.gameObject.SetActive(false);
-        nonBreakDownTime = 300f;
+        nonBreakDownTime = Churub.Core.BalanceTable.BreakdownProtection;
         StartCoroutine(PlaceObject());
         StartCoroutine(DisplayImgChange());
     }
