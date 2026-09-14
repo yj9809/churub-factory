@@ -1,0 +1,44 @@
+name: Unity tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unity-tests-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  editmode:
+    name: Unity EditMode
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: [self-hosted, Windows, X64]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          lfs: true
+          persist-credentials: false
+
+      - name: Run Edit Mode tests
+        shell: powershell
+        run: >-
+          powershell -NoProfile -ExecutionPolicy Bypass
+          -File .\Tests\RunUnityTests.ps1
+          -Mode EditMode
+          -BuildTarget Android
+          -TimeoutMinutes 25
+
+      - name: Upload results and logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: unity-editmode-results
+          path: Logs/Tests/
+          if-no-files-found: warn
+          retention-days: 7
