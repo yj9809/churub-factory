@@ -31,6 +31,7 @@ jobs:
           powershell -NoProfile -ExecutionPolicy Bypass
           -File .\Tests\RunUnityTests.ps1
           -Mode EditMode
+          -BuildTarget Android
           -TimeoutMinutes 25
 
       - name: Upload results and logs

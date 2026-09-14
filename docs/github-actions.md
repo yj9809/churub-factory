@@ -1,6 +1,6 @@
 # GitHub Actions Unity 테스트
 
-`.github/workflows/unity-tests.yml`은 push, 같은 저장소에서 만든 PR, 수동 실행에 반응합니다. 이 PC에 등록된 Windows self-hosted runner가 Unity Hub에 로그인된 현재 사용자 라이선스로 Edit Mode 테스트를 실행하므로 `.ulf`, Unity 이메일, 비밀번호 Secret이 필요하지 않습니다.
+`.github/workflows/unity-tests.yml`은 push, 같은 저장소에서 만든 PR, 수동 실행에 반응합니다. 이 PC에 등록된 Windows self-hosted runner가 Unity Hub에 로그인된 현재 사용자 라이선스로 Android 빌드 대상의 Edit Mode 테스트를 실행하므로 `.ulf`, Unity 이메일, 비밀번호 Secret이 필요하지 않습니다.
 
 ## 실행 조건
 
@@ -8,6 +8,7 @@
 - Unity Hub에서 Personal 라이선스가 활성화되어 있어야 합니다.
 - 프로젝트와 같은 Unity 6000.3.23f1이 설치되어 있어야 합니다.
 - 테스트 실행 중 같은 작업 폴더를 Unity Editor로 열면 안 됩니다.
+- Google Play Games 코드가 `UNITY_ANDROID` 조건으로 컴파일되므로 테스트도 `-BuildTarget Android`로 실행합니다.
 
 워크플로는 `self-hosted`, `Windows`, `X64` 레이블을 사용합니다. GitHub가 매 실행마다 별도의 작업 폴더에 저장소를 체크아웃하므로 평소 개발 중인 `C:\Workspace\2.5D-Mobile`의 미커밋 파일을 읽거나 변경하지 않습니다.
 

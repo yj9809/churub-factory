@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('EditMode', 'PlayMode')][string]$Mode = 'EditMode',
+    [ValidateSet('Android', 'StandaloneWindows64')][string]$BuildTarget = 'Android',
     [string]$UnityEditor = $env:UNITY_EDITOR_PATH,
     [string]$Filter,
     [ValidateRange(1, 120)][int]$TimeoutMinutes = 20
@@ -35,14 +36,14 @@ try {
     New-Item -ItemType Directory -Path $artifacts -Force | Out-Null
     $resultPath = Join-Path $artifacts 'results.xml'
     $logPath = Join-Path $artifacts 'editor.log'
-    $arguments = @('-batchmode', '-runTests', '-projectPath', $project,
+    $arguments = @('-batchmode', '-runTests', '-projectPath', $project, '-buildTarget', $BuildTarget,
         '-testPlatform', $Mode, '-testResults', $resultPath, '-logFile', $logPath)
     if ($Filter) { $arguments += @('-testFilter', $Filter) }
     foreach ($argument in $arguments) {
         if ($argument.Contains('"')) { throw 'Arguments cannot contain double quotes.' }
     }
     $commandLine = ($arguments | ForEach-Object { '"' + $_ + '"' }) -join ' '
-    Write-Host "Running $Mode tests with Unity $version. Artifacts: $artifacts"
+    Write-Host "Running $Mode tests for $BuildTarget with Unity $version. Artifacts: $artifacts"
     $process = Start-Process -FilePath $UnityEditor -ArgumentList $commandLine -PassThru -WindowStyle Hidden
     if (!$process.WaitForExit($TimeoutMinutes * 60000)) {
         Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
