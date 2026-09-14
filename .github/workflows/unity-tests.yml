@@ -15,90 +15,29 @@ concurrency:
 jobs:
   editmode:
     name: Unity EditMode
-    runs-on: ubuntu-22.04
-    timeout-minutes: 45
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: [self-hosted, Windows, X64]
+    timeout-minutes: 30
     steps:
-      - name: Check Unity credentials
-        id: credentials
-        shell: bash
-        env:
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
-        run: |
-          if [[ -z "$UNITY_EMAIL" || -z "$UNITY_PASSWORD" ]]; then
-            echo "can_run=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Skipping Unity EditMode: UNITY_EMAIL and UNITY_PASSWORD are not configured. Fork and Dependabot PRs cannot access these secrets. See docs/github-actions.md."
-            exit 0
-          fi
-          if [[ -z "$UNITY_LICENSE" && -z "$UNITY_SERIAL" ]]; then
-            echo "can_run=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Skipping Unity EditMode: configure UNITY_LICENSE (Personal) or UNITY_SERIAL (Pro) in repository Actions secrets. See docs/github-actions.md."
-            exit 0
-          fi
-          echo "can_run=true" >> "$GITHUB_OUTPUT"
-
       - name: Checkout
-        if: ${{ steps.credentials.outputs.can_run == 'true' }}
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           lfs: true
           persist-credentials: false
 
       - name: Run Edit Mode tests
-        id: tests
-        if: ${{ steps.credentials.outputs.can_run == 'true' }}
-        uses: game-ci/unity-test-runner@32e57712352b500e17974b245a6dce9e11a73213 # v4
-        env:
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
-        with:
-          projectPath: .
-          unityVersion: auto
-          testMode: editmode
-          coverageEnabled: false
-          artifactsPath: test-artifacts
-
-      - name: Validate NUnit results
-        if: ${{ !cancelled() && steps.credentials.outputs.can_run == 'true' && steps.tests.outcome != 'skipped' }}
-        shell: python
-        run: |
-          import os
-          from pathlib import Path
-          import xml.etree.ElementTree as ET
-
-          reports = []
-          for path in Path('test-artifacts').rglob('*.xml'):
-              root = ET.parse(path).getroot()
-              if root.tag == 'test-run':
-                  reports.append((path, root))
-          if not reports:
-              raise SystemExit('No NUnit test-run report found; tests did not complete.')
-          valid = True
-          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
-              summary.write('### Unity Edit Mode results\n\n')
-              for path, root in reports:
-                  total = int(root.attrib['total'])
-                  passed = int(root.attrib['passed'])
-                  failed = int(root.attrib['failed'])
-                  result = root.attrib['result']
-                  line = f'{path.name}: {result}; total={total}, passed={passed}, failed={failed}'
-                  print(line)
-                  summary.write(f'- {line}\n')
-                  valid &= total > 0 and passed > 0 and failed == 0 and result == 'Passed'
-          if not valid:
-              raise SystemExit('Tests failed or no tests passed. Download unity-editmode-results for details.')
+        shell: powershell
+        run: >-
+          powershell -NoProfile -ExecutionPolicy Bypass
+          -File .\Tests\RunUnityTests.ps1
+          -Mode EditMode
+          -TimeoutMinutes 25
 
       - name: Upload results and logs
-        if: ${{ !cancelled() && steps.credentials.outputs.can_run == 'true' && steps.tests.outcome != 'skipped' }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: unity-editmode-results
-          path: |
-            test-artifacts/
-            Logs/
+          path: Logs/Tests/
           if-no-files-found: warn
           retention-days: 7
