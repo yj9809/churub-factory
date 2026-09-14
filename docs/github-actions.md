@@ -26,7 +26,7 @@
 
 GitHub-hosted Linux에서 첫 Unity 임포트와 패키지 복원이 필요합니다. 현재는 캐시 없이 시작하며 실제 실행 시간을 확인한 뒤 추가합니다. 로컬 Windows에서 21개 통과한 결과가 Linux CI 통과를 보장하지는 않습니다. 원격에 커밋된 테스트와 코드만 검사하므로 로컬 미커밋 변경은 포함되지 않습니다.
 
-공개 저장소의 fork PR 및 Dependabot PR에는 Actions Secrets가 제공되지 않아 인증 검사에서 실패합니다. 이때 Unity가 통과한 것으로 표시하지 않습니다. `pull_request_target`으로 외부 코드를 인증 정보와 함께 실행하거나 개인 PC self-hosted runner로 우회하지 않습니다.
+공개 저장소의 fork PR 및 Dependabot PR에는 Actions Secrets가 제공되지 않아 Unity EditMode job을 경고와 함께 건너뜁니다. 이때 Unity가 통과한 것으로 표시하지 않습니다. `pull_request_target`으로 외부 코드를 인증 정보와 함께 실행하거나 개인 PC self-hosted runner로 우회하지 않습니다.
 
 브랜치 보호는 자동 변경하지 않습니다. 첫 CI 성공 후 GitHub Settings의 Rulesets에서 `Unity EditMode`를 필수 상태 검사로 지정하면 실패한 PR의 병합을 차단할 수 있습니다.
 
