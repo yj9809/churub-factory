@@ -146,8 +146,21 @@ internal static class BackendRefactorValidation
         transport.InsertCallback(new DataResponse { Result = Ok });
         Check((await repo.Get()).State == DataLookup.Found && !journal.Pending && transport.Inserts == 1, "Requery recovers committed insert after late callback");
         transport = new Transport(); journal = new Journal { Pending = true }; repo = new GameDataRepository("owner", transport, journal, 20);
-        await repo.Get(); await repo.Create();
-        Check(transport.Inserts == 0 && journal.Pending, "Unresolved creation survives app restart");
+        await repo.Get();
+        Check((await repo.Create()).State == DataLookup.Found && transport.Inserts == 1 && !journal.Pending,
+            "Unresolved creation from a prior session recovers automatically once a fresh lookup reconfirms the row is still missing");
+
+        transport = new Transport(); journal = new Journal { Pending = true }; repo = new GameDataRepository("owner", transport, journal, 20);
+        Check((await repo.Get()).State == DataLookup.NotFound, "Confirmed empty before the row appears");
+        transport.Rows = Row(); // The prior session's lost insert actually landed on the server.
+        Check((await repo.Create()).State == DataLookup.Found && transport.Inserts == 0 && !journal.Pending,
+            "Recheck inside Create finds a row that appeared after a lost callback and does not insert a duplicate");
+
+        transport = new Transport(); journal = new Journal { Pending = true }; repo = new GameDataRepository("owner", transport, journal, 20);
+        await repo.Get();
+        transport.GetResult = Fail; // The reconciling recheck itself fails (e.g. network).
+        Check((await repo.Create()).State == DataLookup.Failed && transport.Inserts == 0,
+            "Recheck failure while reconciling an unresolved creation does not insert blindly");
         transport.Rows = JsonMapper.ToObject("[{},{}]");
         Check((await repo.Get()).State == DataLookup.Failed, "Duplicate rows fail instead of selecting arbitrary data");
         transport.Rows = JsonMapper.ToObject("[{}]");
@@ -250,5 +263,19 @@ internal static class BackendRefactorValidation
             }
         }
         finally { CultureInfo.CurrentCulture = oldCulture; }
+
+        // A field added after this save was written must not break loading older saves.
+        var fields = GameDataCodec.Fields(data, true);
+        fields.Remove(GameDataSchema.Fields.SaveRevision);
+        var legacyRestored = GameDataCodec.Deserialize(JsonMapper.ToJson(fields));
+        Check(legacyRestored.saveRevision == 0 && legacyRestored.guideStep == 7, "Save missing a field added later still loads with defaults");
+
+        bool threw = false;
+        try { GameDataCodec.Deserialize("{}"); } catch (FormatException) { threw = true; }
+        Check(threw, "Row with no recognizable fields is rejected instead of silently becoming a fresh state");
+
+        var fresh = new GameDataState();
+        Check(BalanceTable.Synchronize(fresh), "Never-synchronized state reports a migration");
+        Check(!BalanceTable.Synchronize(fresh), "Already-current state reports no further migration");
     }
 }
