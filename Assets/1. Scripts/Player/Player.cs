@@ -30,6 +30,8 @@ public class Player : MonoBehaviour, IObjectDataSave
     private Animator animator;
     private Camera mainCamera;
     private BaseCost baseCost;
+    private bool? cartVisible;
+    private Tween cartScaleTween;
 
     private Stack<GameObject> ingredientStack = new Stack<GameObject>();
     public Stack<GameObject> IngredientStack
@@ -151,16 +153,21 @@ public class Player : MonoBehaviour, IObjectDataSave
 
     public void OnCart()
     {
-        if (ingredientStack.Count <= 0 && boxStack.Count <= 0 && churuStack.Count <= 0)
-        {
-            cart.transform.DOScale(0, 0.2f);
-            animator.SetFloat("Blend", 0);
-        }
-        else
-        {
-            cart.transform.DOScale(1, 0.2f);
-            animator.SetFloat("Blend", 1);
-        }
+        bool shouldShowCart = ingredientStack.Count > 0 || boxStack.Count > 0 || churuStack.Count > 0;
+        if (cartVisible == shouldShowCart)
+            return;
+
+        cartVisible = shouldShowCart;
+        cartScaleTween?.Kill();
+        cartScaleTween = cart.transform.DOScale(shouldShowCart ? 1f : 0f, 0.2f)
+            .OnKill(() => cartScaleTween = null);
+        animator.SetFloat("Blend", shouldShowCart ? 1f : 0f);
+    }
+
+    private void OnDisable()
+    {
+        cartScaleTween?.Kill();
+        cartVisible = null;
     }
 
     public void DoBoxPackagingAnimationPlayer()

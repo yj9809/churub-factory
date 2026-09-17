@@ -25,6 +25,8 @@ public class Employee : MonoBehaviour
     private Animator animator;
     private NavMeshAgent na;
     private BaseCost baseCost;
+    private bool? cartVisible;
+    private Tween cartScaleTween;
 
     Vector3 previousPosition;
     Vector3 currentPosition;
@@ -99,6 +101,8 @@ public class Employee : MonoBehaviour
 
     private void OnDisable()
     {
+        cartScaleTween?.Kill();
+        cartVisible = null;
         StopWorkCheck();
         ReleaseCurrentTarget();
     }
@@ -151,16 +155,16 @@ public class Employee : MonoBehaviour
     // 물건을 들고 있는지 판별하는 함수
     private void OnCart()
     {
-        if (ingredientStack.Count <= 0 && boxStack.Count <= 0 && churuStack.Count <= 0)
-        {
-            na.speed = baseCost.EmployeeSpeed;
-            cart.transform.DOScale(0, 0.2f);
-        }
-        else
-        {
-            na.speed = baseCost.EmployeeCartSpeed;
-            cart.transform.DOScale(Vector3.one, 0.2f);
-        }
+        bool shouldShowCart = ingredientStack.Count > 0 || boxStack.Count > 0 || churuStack.Count > 0;
+        // Keep speed upgrades effective even when the cart visibility stays unchanged.
+        na.speed = shouldShowCart ? baseCost.EmployeeCartSpeed : baseCost.EmployeeSpeed;
+        if (cartVisible == shouldShowCart)
+            return;
+
+        cartVisible = shouldShowCart;
+        cartScaleTween?.Kill();
+        cartScaleTween = cart.transform.DOScale(shouldShowCart ? 1f : 0f, 0.2f)
+            .OnKill(() => cartScaleTween = null);
     }
     // 타겟 전환용 함수
     private void TargetSwitching()
@@ -323,6 +327,8 @@ public class Employee : MonoBehaviour
     }
     public void PackaingEmployee()
     {
+        cartScaleTween?.Kill();
+        cartVisible = null;
         employeeType = EmployeeType.Packaing;
     }
     public void DoBoxPackagingAnimationEmployee()
