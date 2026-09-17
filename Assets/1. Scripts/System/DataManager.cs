@@ -112,7 +112,6 @@ public class DataManager : Singleton<DataManager>
             if (item is UnityEngine.Object obj && obj == null) { objectDataList.RemoveAt(i); continue; }
             item.ObjectDataSave();
         }
-        baseCost.saveRevision++;
         BalanceTable.Synchronize(baseCost);
         pendingJson = GameDataCodec.Serialize(baseCost);
         // Same-directory atomic replace: keep the old valid snapshot if the write is interrupted.
@@ -128,6 +127,12 @@ public class DataManager : Singleton<DataManager>
             return OperationResult.Error(FailureKind.Rejected, "Player data is not ready for local saving.");
         try
         {
+            // Only a genuine save trigger bumps the revision. SaveAsync's post-success re-capture
+            // calls Capture() directly (not this method) precisely so it does NOT bump again -
+            // otherwise every successful save would produce a payload that never matches the one
+            // just sent, and SnapshotSaveQueue.Drain would never see latest == sent and retransmit
+            // forever.
+            baseCost.saveRevision++;
             Capture();
             return new OperationResult();
         }
