@@ -122,7 +122,7 @@ public class ConveyorBelt : MonoBehaviour
         }
     }
 
-    // °¡µ¶¼ºÀ» À§ÇØ µû·Î ÇÔ¼ö·Î »©µ×½À´Ï´Ù.
+    // ê°€ë…ì„±ì„ ìœ„í•´ ë”°ë¡œ í•¨ìˆ˜ë¡œ ë¹¼ë’€ìŠµë‹ˆë‹¤.
     private void OnConveyorObj()
     {
         PushStack();
@@ -137,7 +137,7 @@ public class ConveyorBelt : MonoBehaviour
         }
     }
 
-    // °íÀå ÀÌº¥Æ®¸¦ À§ÇÑ Å×½ºÆ® ÇÔ¼öµéÀÔ´Ï´Ù.
+    // ê³ ì¥ ì´ë²¤íŠ¸ë¥¼ ìœ„í•œ í…ŒìŠ¤íŠ¸ í•¨ìˆ˜ë“¤ì…ë‹ˆë‹¤.
     private void BreakDownEvent()
     {
         isBreakDown = true;
@@ -160,14 +160,14 @@ public class ConveyorBelt : MonoBehaviour
         StartCoroutine(DisplayImgChange());
     }
 
-    // ÀÓ½Ã·Î ½ºÅÃ °ü·Ã ¹ö±× ¹ß»ı ¹®Á¦ ÇØ°á ÄÚµå.
-    // ÄÁº£ÀÌ¾î º§Æ® ¿Å±æ ¶§¸¶´Ù ½ºÅÃ ÃÊ±âÈ­ ÈÄ ÀÚ½Ä ¿ÀºêÁ§Æ®µéÀ» ´Ù½Ã Çª½¬ÇÏ´Â ÄÚµå·Î º¯°æ, ÃßÈÄ ¸Ş¸ğ¸® ¹®Á¦³ª ´Ù¸¥ ¹®Á¦ ¹ß»ı ÇÒ ¼ö ÀÖÀ»²¨ °°À½.
-    // ÃßÈÄ ÁÁÀº ¹æ¹ı »ı±â¸é ´Ù½Ã ¼öÁ¤ ¿¹Á¤.
+    // ì„ì‹œë¡œ ìŠ¤íƒ ê´€ë ¨ ë²„ê·¸ ë°œìƒ ë¬¸ì œ í•´ê²° ì½”ë“œ.
+    // ì»¨ë² ì´ì–´ ë²¨íŠ¸ ì˜®ê¸¸ ë•Œë§ˆë‹¤ ìŠ¤íƒ ì´ˆê¸°í™” í›„ ìì‹ ì˜¤ë¸Œì íŠ¸ë“¤ì„ ë‹¤ì‹œ í‘¸ì‰¬í•˜ëŠ” ì½”ë“œë¡œ ë³€ê²½, ì¶”í›„ ë©”ëª¨ë¦¬ ë¬¸ì œë‚˜ ë‹¤ë¥¸ ë¬¸ì œ ë°œìƒ í•  ìˆ˜ ìˆì„êº¼ ê°™ìŒ.
+    // ì¶”í›„ ì¢‹ì€ ë°©ë²• ìƒê¸°ë©´ ë‹¤ì‹œ ìˆ˜ì • ì˜ˆì •.
     private void PushStack()
     {
         if(ingredientStorage.childCount != cbStack.Count)
         {
-            Debug.Log("½ºÅÃ ¼öÁ¤");
+            Debug.Log("ìŠ¤íƒ ìˆ˜ì •");
             cbStack.Clear();
             foreach (Transform item in ingredientStorage)
             {
@@ -180,13 +180,13 @@ public class ConveyorBelt : MonoBehaviour
     {
         Rigidbody rb = collision.gameObject.GetComponent<Rigidbody>();
 
-        // ½ºÅÃÀÌ °¡µæ ½×¿´À» ¶§¸¦ ´ëºñÇØ¼­ ¸ØÃß´Â ÄÚµå ÀÛ¼º. (Å×½ºÆ®)
+        // ìŠ¤íƒì´ ê°€ë“ ìŒ“ì˜€ì„ ë•Œë¥¼ ëŒ€ë¹„í•´ì„œ ë©ˆì¶”ëŠ” ì½”ë“œ ì‘ì„±. (í…ŒìŠ¤íŠ¸)
         speed = isOn && !isBreakDown ? 5 : 0;
-        // ½ºÅÃÀÌ °¡µæ ½×ÀÌ¸é ¸ØÃß°í ½ºÅÃÀÌ ¾ø¾îÁ³À» °æ¿ì ´Ù½Ã ÀÛµ¿ È®ÀÎ.
+        // ìŠ¤íƒì´ ê°€ë“ ìŒ“ì´ë©´ ë©ˆì¶”ê³  ìŠ¤íƒì´ ì—†ì–´ì¡Œì„ ê²½ìš° ë‹¤ì‹œ ì‘ë™ í™•ì¸.
 
         if (rb != null)
         {
-            rb.velocity = speed * direction;
+            rb.linearVelocity = speed * direction;
         }
     }
 }

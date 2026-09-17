@@ -4,10 +4,10 @@ using UnityEngine;
 using UnityEngine.Android;
 using DG.Tweening;
 
-// ¿©±â´Â Àç·á Å¸ÀÔ ³ª´²¼­ ¿òÁ÷ÀÓ °áÁ¤ÇØÁÙ·Á°í ¸¸µç enumÀÓ
-// create´Â Àç·á »ý»êÇÒ ¶§, DropÀº ¹°°Ç °¡Á®°¥ ¶§, Array´Â ¹Ú½º ½ºÅä¸®Áö¿¡ ¿Å±æ ¶§
-// Car´Â Æ®·°¿¡ ¹Ú½º ¿Å±æ ¶§, Box´Â ¸» ±×´ë·Î ¹Ú½º¸¦ ÇÃ·¹ÀÌ¾î Ä«Æ®¿¡ ¿Å±æ ¶§ 
-// ¾î´À ºÎºÐ ¿ÀºêÁ§Æ® ¿òÁ÷ÀÓÀÌ ÀÌ»óÇÏ´Ù ½ÍÀ¸¸é ¿©±â È®ÀÎÇØ¼­ ¹Ø¿¡ ¿òÁ÷ÀÓ Ã³¸®ÇÏ´Â ºÎºÐ¿¡ ÇØ´ç enum ¹øÈ£ Ã£¾Æ¼­ È®ÀÎÇÏ¸é µÊ
+// ì—¬ê¸°ëŠ” ìž¬ë£Œ íƒ€ìž… ë‚˜ëˆ ì„œ ì›€ì§ìž„ ê²°ì •í•´ì¤„ë ¤ê³  ë§Œë“  enumìž„
+// createëŠ” ìž¬ë£Œ ìƒì‚°í•  ë•Œ, Dropì€ ë¬¼ê±´ ê°€ì ¸ê°ˆ ë•Œ, ArrayëŠ” ë°•ìŠ¤ ìŠ¤í† ë¦¬ì§€ì— ì˜®ê¸¸ ë•Œ
+// CarëŠ” íŠ¸ëŸ­ì— ë°•ìŠ¤ ì˜®ê¸¸ ë•Œ, BoxëŠ” ë§ ê·¸ëŒ€ë¡œ ë°•ìŠ¤ë¥¼ í”Œë ˆì´ì–´ ì¹´íŠ¸ì— ì˜®ê¸¸ ë•Œ 
+// ì–´ëŠ ë¶€ë¶„ ì˜¤ë¸Œì íŠ¸ ì›€ì§ìž„ì´ ì´ìƒí•˜ë‹¤ ì‹¶ìœ¼ë©´ ì—¬ê¸° í™•ì¸í•´ì„œ ë°‘ì— ì›€ì§ìž„ ì²˜ë¦¬í•˜ëŠ” ë¶€ë¶„ì— í•´ë‹¹ enum ë²ˆí˜¸ ì°¾ì•„ì„œ í™•ì¸í•˜ë©´ ë¨
 public enum CheckType
 {
     Create,
@@ -16,7 +16,7 @@ public enum CheckType
     Car,
     Box
 }
-#region Áøµ¿ÀÌ¾ú´ø Ä£±¸...
+#region ì§„ë™ì´ì—ˆë˜ ì¹œêµ¬...
 public static class Vibrations
 {
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -55,17 +55,17 @@ public static class Utility
 
         return ren.size.y;
     }
-    // parentPos ÀÌµ¿ ½ÃÅ³ °÷, churu ¸¸µé ¿ÀºêÁ§Æ®(Ã³À½ Àç·á ¸¸µé¾îÁÖ´Â °÷¿¡¼­¸¸ »ç¿ëÇÏ¸é µÉ²¨ °°¾Æ¼­ ³ª¸ÓÁö´Â ´Ù Null)
-    // getChuruStack °¡Á®¿Ã ½ºÅÃ(a¿¡¼­ b·Î ¿Å±æ ¶§ a¸¦ ¸»ÇÔ), setChuruStack ¹ÞÀ» ½ºÅÃ(¸¶Âù°¡Áö·Î b¸¦ ¸»ÇÔ), num Å¸ÀÔ ±¸ºÐÀ» À§ÇÑ ÀÎÆ®
-    // ¸· Àç·áµé ÀÌ»óÇÏ°Ô Å©°Ô³ª Àû°Ô ³ª¿Ã ¶§³ª Àç·áµéÀÌ ÀÌ»óÇÏ°Ô ¿òÁ÷ÀÏ ¶§ ´ëºÎºÐ ¿©±â¼­ È®ÀÎÇÏ¸é µÊ
+    // parentPos ì´ë™ ì‹œí‚¬ ê³³, churu ë§Œë“¤ ì˜¤ë¸Œì íŠ¸(ì²˜ìŒ ìž¬ë£Œ ë§Œë“¤ì–´ì£¼ëŠ” ê³³ì—ì„œë§Œ ì‚¬ìš©í•˜ë©´ ë êº¼ ê°™ì•„ì„œ ë‚˜ë¨¸ì§€ëŠ” ë‹¤ Null)
+    // getChuruStack ê°€ì ¸ì˜¬ ìŠ¤íƒ(aì—ì„œ bë¡œ ì˜®ê¸¸ ë•Œ aë¥¼ ë§í•¨), setChuruStack ë°›ì„ ìŠ¤íƒ(ë§ˆì°¬ê°€ì§€ë¡œ bë¥¼ ë§í•¨), num íƒ€ìž… êµ¬ë¶„ì„ ìœ„í•œ ì¸íŠ¸
+    // ë§‰ ìž¬ë£Œë“¤ ì´ìƒí•˜ê²Œ í¬ê²Œë‚˜ ì ê²Œ ë‚˜ì˜¬ ë•Œë‚˜ ìž¬ë£Œë“¤ì´ ì´ìƒí•˜ê²Œ ì›€ì§ì¼ ë•Œ ëŒ€ë¶€ë¶„ ì—¬ê¸°ì„œ í™•ì¸í•˜ë©´ ë¨
     /// <summary>
-    /// ¿ÀºêÁ§Æ® ÀÌµ¿ ½ÃÅ³ ÇÔ¼ö.
+    /// ì˜¤ë¸Œì íŠ¸ ì´ë™ ì‹œí‚¬ í•¨ìˆ˜.
     /// </summary>
-    /// <param name="parentPos">ÀÌµ¿ ½ÃÅ³ °÷</param>
-    /// <param name="churu">¸¸µé ¿ÀºêÁ§Æ®</param>
-    /// <param name="getChuruStack">°¡Á®¿Ã ½ºÅÃ</param>
-    /// <param name="setChuruStack">¹ÞÀ» ½ºÅÃ</param>
-    /// <param name="num">Å¸ÀÔÀ» ±¸ºÐÇÏ´Â ÀÎÆ®</param>
+    /// <param name="parentPos">ì´ë™ ì‹œí‚¬ ê³³</param>
+    /// <param name="churu">ë§Œë“¤ ì˜¤ë¸Œì íŠ¸</param>
+    /// <param name="getChuruStack">ê°€ì ¸ì˜¬ ìŠ¤íƒ</param>
+    /// <param name="setChuruStack">ë°›ì„ ìŠ¤íƒ</param>
+    /// <param name="num">íƒ€ìž…ì„ êµ¬ë¶„í•˜ëŠ” ì¸íŠ¸</param>
     public static void ObjectDrop(Transform parentPos, GameObject churu, Stack<GameObject> getChuruStack, Stack<GameObject> setChuruStack, int num)
     {
         GameObject newChuru;

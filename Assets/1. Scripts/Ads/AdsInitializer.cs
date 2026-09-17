@@ -16,11 +16,11 @@ public class AdsInitializer : MonoBehaviour, IUnityAdsInitializationListener
     public void InitializeAds()
     {
 #if UNITY_IOS
-        _gameId = _iOSGameId; // iOS ÇÃ·§Æû¿ë °ÔÀÓ ID ¼³Á¤
+        _gameId = _iOSGameId; // iOS í”Œë«í¼ìš© ê²Œì„ ID ì„¤ì •
 #elif UNITY_ANDROID
-        _gameId = _androidGameId; // Android ÇÃ·§Æû¿ë °ÔÀÓ ID ¼³Á¤
+        _gameId = _androidGameId; // Android í”Œë«í¼ìš© ê²Œì„ ID ì„¤ì •
 #elif UNITY_EDITOR
-        _gameId = _androidGameId; // ¿¡µğÅÍ¿¡¼­ ±â´É Å×½ºÆ®¸¦ À§ÇÑ ¼³Á¤
+        _gameId = _androidGameId; // ì—ë””í„°ì—ì„œ ê¸°ëŠ¥ í…ŒìŠ¤íŠ¸ë¥¼ ìœ„í•œ ì„¤ì •
 #endif
         if (!Advertisement.isInitialized && Advertisement.isSupported)
         {
@@ -30,11 +30,11 @@ public class AdsInitializer : MonoBehaviour, IUnityAdsInitializationListener
 
     public void OnInitializationComplete()
     {
-        Debug.Log("Unity Ads ÃÊ±âÈ­ ¿Ï·á.");
+        Debug.Log("Unity Ads ì´ˆê¸°í™” ì™„ë£Œ.");
     }
 
     public void OnInitializationFailed(UnityAdsInitializationError error, string message)
     {
-        Debug.LogWarning($"Unity Ads ÃÊ±âÈ­ ½ÇÆĞ: {error.ToString()} - {message}");
+        Debug.LogWarning($"Unity Ads ì´ˆê¸°í™” ì‹¤íŒ¨: {error.ToString()} - {message}");
     }
 }

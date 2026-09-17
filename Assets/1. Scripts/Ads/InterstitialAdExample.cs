@@ -9,7 +9,7 @@ public class InterstitialAdExample : MonoBehaviour, IUnityAdsLoadListener, IUnit
 
     void Awake()
     {
-        // ÇöÀç ÇÃ·§Æû¿¡ ´ëÇÑ ±¤°í ´ÜÀ§ ID °¡Á®¿À±â
+        // í˜„ì¬ í”Œë«í¼ì— ëŒ€í•œ ê´‘ê³  ë‹¨ìœ„ ID ê°€ì ¸ì˜¤ê¸°
         _adUnitId = (Application.platform == RuntimePlatform.IPhonePlayer)
             ? _iOsAdUnitId
             : _androidAdUnitId;
@@ -18,40 +18,40 @@ public class InterstitialAdExample : MonoBehaviour, IUnityAdsLoadListener, IUnit
     void Start()
     {
         LoadAd();
-        // 5ºĞ(300ÃÊ)¸¶´Ù ±¤°í Ç¥½Ã ½ÃÀÛ
+        // 5ë¶„(300ì´ˆ)ë§ˆë‹¤ ê´‘ê³  í‘œì‹œ ì‹œì‘
         InvokeRepeating("ShowAd", 300f, 300f);
     }
 
-    // ±¤°í ´ÜÀ§¿¡ ÄÜÅÙÃ÷ ·Îµå:
+    // ê´‘ê³  ë‹¨ìœ„ì— ì½˜í…ì¸  ë¡œë“œ:
     public void LoadAd()
     {
-        // Áß¿ä! ÃÊ±âÈ­ ÀÌÈÄ¿¡¸¸ ÄÜÅÙÃ÷¸¦ ·ÎµåÇÏ¼¼¿ä (ÀÌ ¿¹Á¦¿¡¼­´Â ÃÊ±âÈ­°¡ ´Ù¸¥ ½ºÅ©¸³Æ®¿¡¼­ Ã³¸®µÊ).
+        // ì¤‘ìš”! ì´ˆê¸°í™” ì´í›„ì—ë§Œ ì½˜í…ì¸ ë¥¼ ë¡œë“œí•˜ì„¸ìš” (ì´ ì˜ˆì œì—ì„œëŠ” ì´ˆê¸°í™”ê°€ ë‹¤ë¥¸ ìŠ¤í¬ë¦½íŠ¸ì—ì„œ ì²˜ë¦¬ë¨).
         Advertisement.Load(_adUnitId, this);
     }
 
-    // ±¤°í ´ÜÀ§¿¡¼­ ·ÎµåµÈ ÄÜÅÙÃ÷ Ç¥½Ã:
+    // ê´‘ê³  ë‹¨ìœ„ì—ì„œ ë¡œë“œëœ ì½˜í…ì¸  í‘œì‹œ:
     public void ShowAd()
     {
-        // ±¤°í ÄÜÅÙÃ÷°¡ ÀÌÀü¿¡ ·ÎµåµÇÁö ¾ÊÀº °æ¿ì ÀÌ ¸Ş¼­µå´Â ½ÇÆĞÇÕ´Ï´Ù.
+        // ê´‘ê³  ì½˜í…ì¸ ê°€ ì´ì „ì— ë¡œë“œë˜ì§€ ì•Šì€ ê²½ìš° ì´ ë©”ì„œë“œëŠ” ì‹¤íŒ¨í•©ë‹ˆë‹¤.
         Advertisement.Show(_adUnitId, this);
     }
 
-    // Load Listener ¹× Show Listener ÀÎÅÍÆäÀÌ½º ¸Ş¼­µå ±¸Çö:
+    // Load Listener ë° Show Listener ì¸í„°í˜ì´ìŠ¤ ë©”ì„œë“œ êµ¬í˜„:
     public void OnUnityAdsAdLoaded(string adUnitId)
     {
-        // ±¤°í ´ÜÀ§°¡ ÄÜÅÙÃ÷¸¦ ¼º°øÀûÀ¸·Î ·ÎµåÇßÀ» ¶§ ½ÇÇàÇÒ ÄÚµå¸¦ ¼±ÅÃÀûÀ¸·Î ÀÛ¼ºÇÒ ¼ö ÀÖ½À´Ï´Ù.
+        // ê´‘ê³  ë‹¨ìœ„ê°€ ì½˜í…ì¸ ë¥¼ ì„±ê³µì ìœ¼ë¡œ ë¡œë“œí–ˆì„ ë•Œ ì‹¤í–‰í•  ì½”ë“œë¥¼ ì„ íƒì ìœ¼ë¡œ ì‘ì„±í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.
     }
 
     public void OnUnityAdsFailedToLoad(string _adUnitId, UnityAdsLoadError error, string message)
     {
-        Debug.LogWarning($"±¤°í ´ÜÀ§ ·Îµå ¿À·ù: {_adUnitId} - {error.ToString()} - {message}");
-        // ±¤°í ´ÜÀ§°¡ ·Îµå ½ÇÆĞÇÒ °æ¿ì ¼±ÅÃÀûÀ¸·Î ´Ù½Ã ½ÃµµÇÏ´Â µîÀÇ ÄÚµå¸¦ ½ÇÇàÇÒ ¼ö ÀÖ½À´Ï´Ù.
+        Debug.LogWarning($"ê´‘ê³  ë‹¨ìœ„ ë¡œë“œ ì˜¤ë¥˜: {_adUnitId} - {error.ToString()} - {message}");
+        // ê´‘ê³  ë‹¨ìœ„ê°€ ë¡œë“œ ì‹¤íŒ¨í•  ê²½ìš° ì„ íƒì ìœ¼ë¡œ ë‹¤ì‹œ ì‹œë„í•˜ëŠ” ë“±ì˜ ì½”ë“œë¥¼ ì‹¤í–‰í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.
     }
 
     public void OnUnityAdsShowFailure(string _adUnitId, UnityAdsShowError error, string message)
     {
-        Debug.LogWarning($"±¤°í ´ÜÀ§ Ç¥½Ã ¿À·ù {_adUnitId}: {error.ToString()} - {message}");
-        // ±¤°í ´ÜÀ§°¡ Ç¥½Ã ½ÇÆĞÇÒ °æ¿ì ¼±ÅÃÀûÀ¸·Î ´Ù¸¥ ±¤°í¸¦ ·ÎµåÇÏ´Â µîÀÇ ÄÚµå¸¦ ½ÇÇàÇÒ ¼ö ÀÖ½À´Ï´Ù.
+        Debug.LogWarning($"ê´‘ê³  ë‹¨ìœ„ í‘œì‹œ ì˜¤ë¥˜ {_adUnitId}: {error.ToString()} - {message}");
+        // ê´‘ê³  ë‹¨ìœ„ê°€ í‘œì‹œ ì‹¤íŒ¨í•  ê²½ìš° ì„ íƒì ìœ¼ë¡œ ë‹¤ë¥¸ ê´‘ê³ ë¥¼ ë¡œë“œí•˜ëŠ” ë“±ì˜ ì½”ë“œë¥¼ ì‹¤í–‰í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.
     }
 
     public void OnUnityAdsShowStart(string _adUnitId) { }

@@ -52,11 +52,7 @@ public class GameManager : Singleton<GameManager>
 
     public string sceneName;
 
-    //���� ���� �� ���� �ڵ�
-    private void OnApplicationQuit()
-    {
-        DataManager.Instance.GameDataUpdate();
-    }
+    //게임 종료 시 저장 코드
     protected override void Awake()
     {
         base.Awake();
@@ -155,14 +151,14 @@ public class GameManager : Singleton<GameManager>
                 employeeNum++;
             }
         }
-        // �ҷ����� ������ ����Ʈ ����
+        // 불러오기 끝나고 리스트 삭제
         foreach (var item in employeesToRemove)
         {
             employee.Remove(item);
         }
     }
 
-    // ���� �����ϱ� ���� �������̽��� Ȱ���Ͽ� ���� ���尪 ���
+    // 스택 저장하기 위해 인터페이스를 활용하여 스택 저장값 등록
     public void AddStackable(IStackable stackable)
     {
         if (!stackCount.Contains(stackable))
@@ -173,19 +169,19 @@ public class GameManager : Singleton<GameManager>
         workScheduler.Register(stackable);
     }
     
-    //�������� ã�� Ÿ�� �������̽��� Ȱ���Ͽ� Ÿ�� ���
+    //종업원이 찾을 타겟 인터페이스를 활용하여 타겟 등록
     public void AddTarget(IStackable stackable)
     {
         AddStackable(stackable);
     }
 
-    // �������� ���� �ִ� Ÿ�� Ȱ���� ��ġ�� �ʰ� �ϱ� ���� Bool���� ���� ����
+    // 종업원이 쓰고 있는 타겟 활용을 겹치지 않게 하기 위해 Bool값을 통해 조정
     public bool IsTargetBeingUsed(IStackable stackable)
     {
         return workScheduler.IsReserved(stackable);
     }
 
-    // �������� Ÿ���� ���� �ִ� ��� ��ųʸ� Bool �� ������ ���� ���� �ִ��� Ȯ��
+    // 종업원이 타겟을 쓰고 있는 경우 딕셔너리 Bool 값 변경을 통해 쓰고 있는지 확인
     public void SetTargetBeingUsed(IStackable stackable, bool isUsed)
     {
         if (!isUsed)
@@ -206,26 +202,26 @@ public class GameManager : Singleton<GameManager>
             (role < 0 || candidate.GetTypeNum() == role));
     }
 
-    // �������� Ÿ���� �ٸ� ���������� ����� �ٸ� Ÿ���� ã��
+    // 종업원이 타겟을 다른 종업원에게 뺏기면 다른 타겟을 찾기
     public void UpdateTargets()
     {
         foreach (var employee in employees)
         {
             if (employee != null)
             {
-                // ���� ��ǥ�� �ִ� ��� ���ο� ��ǥ�� ������Ʈ
+                // 현재 목표가 있는 경우 새로운 목표로 업데이트
                 employee.RequestWorkCheck();
             }
         }
     }
 
-    // �׺�Ž� ����
+    // 네비매쉬 빌드
     public void NowNavMeshBake()
     {
         nms.BuildNavMesh();
     }
 
-    // �����̾� ��Ʈ�� ���������� �湮�ϱ� ���� ���� �Լ�
+    // 컨베이어 벨트를 순차적으로 방문하기 위해 만든 함수
     public Transform ConveyorTransform(Employee employee)
     {
         employee.CbTransNum++;

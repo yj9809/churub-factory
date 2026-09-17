@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ChangeObject : MonoBehaviour
 {
-    [SerializeField] private GameObject objectB; // ��ȯ�� B ������Ʈ�� ������
+    [SerializeField] private GameObject objectB; // 교체될 오브젝트
     [SerializeField] private Transform newTransform;
 
     private PoolingManager pool;
@@ -29,7 +29,7 @@ public class ChangeObject : MonoBehaviour
                 rd.freezeRotation = true;
             }
 
-            rd.velocity = other.GetComponent<Rigidbody>().velocity;
+            rd.linearVelocity = other.GetComponent<Rigidbody>().linearVelocity;
             pool.ReturnObjecte(other.gameObject);
         }
     }

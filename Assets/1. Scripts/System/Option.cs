@@ -5,8 +5,8 @@ using UnityEngine.UI;
 using Sirenix.OdinInspector;
 using TMPro;
 
-// ÀÌ°Íµµ ±Ç¿À¼® ÀÛÇ° ¿©±â¼­ ³»°¡ °Çµç°Ô ¾ø¾î¼­ Ã£±â Èûµë
-// ¹®Á¦ »ı±â¸é ¿ª½Ã³ª µ¿ÀÏÇÏ°Ô ±Ç¿À¼®ÇÑÅ× ¹®ÀÇ ºÎÅ¹
+// ì´ê²ƒë„ ê¶Œì˜¤ì„ ì‘í’ˆ ì—¬ê¸°ì„œ ë‚´ê°€ ê±´ë“ ê²Œ ì—†ì–´ì„œ ì°¾ê¸° í˜ë“¬
+// ë¬¸ì œ ìƒê¸°ë©´ ì—­ì‹œë‚˜ ë™ì¼í•˜ê²Œ ê¶Œì˜¤ì„í•œí…Œ ë¬¸ì˜ ë¶€íƒ
 public class Option : MonoBehaviour
 {
     [SerializeField] private Button showOptionButton;
@@ -52,7 +52,7 @@ public class Option : MonoBehaviour
         ExitGame();
     }
 
-    // ¿É¼Ç ¹öÆ° (ºñ)È°¼ºÈ­
+    // ì˜µì…˜ ë²„íŠ¼ (ë¹„)í™œì„±í™”
     public void OptionButtonActive(bool isActive)
     {
         showOptionButton.interactable = isActive;
@@ -61,14 +61,14 @@ public class Option : MonoBehaviour
     public void ShowOption()
     {
         blurPanel.SetActive(true);
-        // Å¸ÀÓ ½ºÄÉÀÏ Ãß°¡
+        // íƒ€ì„ ìŠ¤ì¼€ì¼ ì¶”ê°€
         Time.timeScale = 0;
     }
 
     private void CloseOption()
     {
         blurPanel.SetActive(false);
-        // Å¸ÀÓ ½ºÄÉÀÏ Ãß°¡
+        // íƒ€ì„ ìŠ¤ì¼€ì¼ ì¶”ê°€
         Time.timeScale = 1;
     }
 
@@ -144,15 +144,10 @@ public class Option : MonoBehaviour
         }
     }
 
-    private void OnApplicationQuit()
-    {
-        DataManager.Instance.GameDataUpdate();
-    }
-
     private void ShowExitWarning()
     {
         exitText.gameObject.SetActive(true);
-        exitText.text = "ÇÑ ¹ø ´õ ´©¸£¸é Á¾·áµË´Ï´Ù.";
+        exitText.text = "í•œ ë²ˆ ë” ëˆ„ë¥´ë©´ ì¢…ë£Œë©ë‹ˆë‹¤.";
         Invoke("HideExitWarning", exitDelay);
     }
 
