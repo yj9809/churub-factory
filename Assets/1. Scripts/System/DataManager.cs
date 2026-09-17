@@ -28,32 +28,80 @@ public class DataManager : Singleton<DataManager>
     public void AddObjStackCountList(IObjectDataSave item)
     { if (!objectDataList.Contains(item)) objectDataList.Add(item); }
 
-    public OperationResult Apply(GameDataRepository source, BaseCost loaded)
+    public OperationResult Apply(GameDataRepository source, BaseCost serverData)
     {
-        if (loaded == null) return OperationResult.Error(FailureKind.InvalidData, "Missing player data.");
+        if (serverData == null) return OperationResult.Error(FailureKind.InvalidData, "Missing player data.");
         if (saving) return OperationResult.Error(FailureKind.Busy, "Previous save is still settling.");
         ready = false;
         repository = source;
         try
         {
-            // An outstanding local write belongs exclusively to this authenticated account.
-            if (File.Exists(LocalPath))
+            BaseCost resolved = serverData;
+            string localJson = ReadPendingSnapshot();
+            if (localJson != null)
             {
-                pendingJson = File.ReadAllText(LocalPath);
-                loaded = GameDataCodec.Deserialize(pendingJson);
+                try
+                {
+                    var local = GameDataCodec.Deserialize(localJson);
+                    // A pending local snapshot only wins when it captured changes the server has
+                    // not confirmed yet; otherwise trust the server (progress made on another
+                    // device or session after this file was written must not be overwritten).
+                    if (local.saveRevision >= serverData.saveRevision)
+                    {
+                        resolved = local;
+                        pendingJson = localJson;
+                    }
+                    else DeletePendingFiles();
+                }
+                catch (Exception e) { QuarantineCorruptSnapshot(e); }
             }
-            else if (File.Exists(LocalPath + ".tmp"))
-            {
-                pendingJson = File.ReadAllText(LocalPath + ".tmp");
-                loaded = GameDataCodec.Deserialize(pendingJson);
-            }
-            BalanceTable.Synchronize(loaded);
-            baseCost = loaded;
+            bool migrated = BalanceTable.Synchronize(resolved);
+            baseCost = resolved;
             ready = true;
-            nextSave = Time.unscaledTime + 30;
+            nextSave = migrated ? Time.unscaledTime : Time.unscaledTime + 30;
             return new OperationResult();
         }
         catch (Exception e) { return OperationResult.Error(FailureKind.InvalidData, "Local recovery failed: " + e.GetType().Name); }
+    }
+
+    // An outstanding local write belongs exclusively to this authenticated account.
+    private string ReadPendingSnapshot()
+    {
+        if (File.Exists(LocalPath)) return File.ReadAllText(LocalPath);
+        if (File.Exists(LocalPath + ".tmp")) return File.ReadAllText(LocalPath + ".tmp");
+        return null;
+    }
+
+    // Never leave a snapshot the game cannot parse blocking every future launch: move it aside
+    // for later inspection and continue with the server-confirmed data instead.
+    private void QuarantineCorruptSnapshot(Exception cause)
+    {
+        BackendResponse.Log("LocalRecovery", OperationResult.Error(FailureKind.InvalidData, "Local snapshot unreadable: " + cause.GetType().Name));
+        Quarantine(LocalPath);
+        Quarantine(LocalPath + ".tmp");
+    }
+
+    private static void Quarantine(string path)
+    {
+        if (!File.Exists(path)) return;
+        try
+        {
+            string corrupt = path + ".corrupt";
+            if (File.Exists(corrupt)) File.Delete(corrupt);
+            File.Move(path, corrupt);
+        }
+        catch { TryDelete(path); }
+    }
+
+    private void DeletePendingFiles()
+    {
+        TryDelete(LocalPath);
+        TryDelete(LocalPath + ".tmp");
+    }
+
+    private static void TryDelete(string path)
+    {
+        try { if (File.Exists(path)) File.Delete(path); } catch { }
     }
 
     private void Capture()
@@ -64,6 +112,7 @@ public class DataManager : Singleton<DataManager>
             if (item is UnityEngine.Object obj && obj == null) { objectDataList.RemoveAt(i); continue; }
             item.ObjectDataSave();
         }
+        baseCost.saveRevision++;
         BalanceTable.Synchronize(baseCost);
         pendingJson = GameDataCodec.Serialize(baseCost);
         // Same-directory atomic replace: keep the old valid snapshot if the write is interrupted.
