@@ -154,7 +154,16 @@ public sealed class GameDataRepository
             return Failed("Creation requires a successful empty lookup and settled transport.");
         // Persist BEFORE dispatch. A timeout, crash or lost response must never trigger blind insert.
         if (journal.Pending)
-            return Failed("Previous creation is unresolved. Retry lookup; if still empty, contact support to reconcile creation.");
+        {
+            // An earlier session's insert never confirmed. Re-verify emptiness right now rather
+            // than refusing forever; the fresh lookup is the authoritative signal, not the stale
+            // local marker. Only proceed if the row is still confirmed missing.
+            var recheck = await Get();
+            if (recheck.State != DataLookup.NotFound)
+                return recheck.State == DataLookup.Found
+                    ? recheck
+                    : Failed("Retry lookup failed while reconciling an unresolved creation.");
+        }
         confirmedMissing = false;
         var initial = new BaseCost { guestID = transport.GuestId };
         var param = GameDataCodec.Param(initial, true);
@@ -216,7 +225,8 @@ public static class GameDataCodec
             [GameDataSchema.Fields.ObjectData] = data.objectData,
             [GameDataSchema.Fields.GameProgress] = data.gameProgressBool,
             [GameDataSchema.Fields.GuideStep] = data.guideStep,
-            [GameDataSchema.Fields.NewGame] = data.newGame
+            [GameDataSchema.Fields.NewGame] = data.newGame,
+            [GameDataSchema.Fields.SaveRevision] = data.saveRevision
         };
         if (guest) fields[GameDataSchema.Fields.GuestId] = data.guestID ?? "";
         return fields;
@@ -229,18 +239,28 @@ public static class GameDataCodec
     }
     public static string Serialize(BaseCost data) => JsonMapper.ToJson(Fields(data, true));
     public static BaseCost Deserialize(string json) => Read(JsonMapper.ToObject(json));
+    // Missing top-level fields or map entries fall back to BaseCost's own constructor
+    // defaults instead of throwing, so a save written before a field existed still loads.
+    // A row missing every field present since the first schema version is not a legacy save,
+    // it is empty/malformed data and must still fail rather than silently become a fresh state.
     public static BaseCost Read(JsonData json)
     {
+        if (json == null || !json.IsObject ||
+            (!json.Keys.Contains(GameDataSchema.Fields.GuideStep) && !json.Keys.Contains(GameDataSchema.Fields.NewGame)))
+            throw new FormatException("Row is missing core save fields.");
         var data = new BaseCost();
-        data.guestID = json[GameDataSchema.Fields.GuestId].ToString();
-        data.guideStep = int.Parse(json[GameDataSchema.Fields.GuideStep].ToString(), CultureInfo.InvariantCulture);
-        data.newGame = bool.Parse(json[GameDataSchema.Fields.NewGame].ToString());
-        ReadMap(json[GameDataSchema.Fields.UpgradeCosts], data.upgradeCosts, value => int.Parse(value, CultureInfo.InvariantCulture));
-        ReadMap(json[GameDataSchema.Fields.PlayerData], data.playerData, ReadFloat);
-        ReadMap(json[GameDataSchema.Fields.EmployeeData], data.employeeData, ReadFloat);
-        ReadMap(json[GameDataSchema.Fields.ObjectData], data.objectData, value => int.Parse(value, CultureInfo.InvariantCulture));
-        ReadMap(json[GameDataSchema.Fields.GameProgress], data.gameProgressBool, bool.Parse);
-        foreach (JsonData name in json[GameDataSchema.Fields.EmployeeList]) data.employeeList.Add(name.ToString());
+        data.guestID = ReadString(json, GameDataSchema.Fields.GuestId, data.guestID);
+        data.guideStep = ReadInt(json, GameDataSchema.Fields.GuideStep, data.guideStep);
+        data.newGame = ReadBool(json, GameDataSchema.Fields.NewGame, data.newGame);
+        data.saveRevision = ReadInt(json, GameDataSchema.Fields.SaveRevision, data.saveRevision);
+        ReadMap(TryGet(json, GameDataSchema.Fields.UpgradeCosts), data.upgradeCosts, value => int.Parse(value, CultureInfo.InvariantCulture));
+        ReadMap(TryGet(json, GameDataSchema.Fields.PlayerData), data.playerData, ReadFloat);
+        ReadMap(TryGet(json, GameDataSchema.Fields.EmployeeData), data.employeeData, ReadFloat);
+        ReadMap(TryGet(json, GameDataSchema.Fields.ObjectData), data.objectData, value => int.Parse(value, CultureInfo.InvariantCulture));
+        ReadMap(TryGet(json, GameDataSchema.Fields.GameProgress), data.gameProgressBool, bool.Parse);
+        var employeeList = TryGet(json, GameDataSchema.Fields.EmployeeList);
+        if (employeeList != null && employeeList.IsArray)
+            foreach (JsonData name in employeeList) data.employeeList.Add(name.ToString());
         return data;
     }
     private static float ReadFloat(string value)
@@ -249,12 +269,38 @@ public static class GameDataCodec
         if (float.IsNaN(number) || float.IsInfinity(number)) throw new FormatException("Non-finite player value.");
         return number;
     }
+    private static JsonData TryGet(JsonData json, string key)
+    {
+        // LitJson returns a plain C# null for a JSON null value, so no separate null check
+        // of the returned JsonData is needed here.
+        if (json == null || !json.IsObject || !json.Keys.Contains(key)) return null;
+        return json[key];
+    }
+    private static string ReadString(JsonData json, string key, string fallback)
+    {
+        var value = TryGet(json, key);
+        return value == null ? fallback : value.ToString();
+    }
+    private static int ReadInt(JsonData json, string key, int fallback)
+    {
+        var value = TryGet(json, key);
+        return value != null && int.TryParse(value.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int number) ? number : fallback;
+    }
+    private static bool ReadBool(JsonData json, string key, bool fallback)
+    {
+        var value = TryGet(json, key);
+        return value != null && bool.TryParse(value.ToString(), out bool result) ? result : fallback;
+    }
     private static void ReadMap<T>(JsonData json, Dictionary<string, T> target, Func<string, T> convert)
     {
+        if (json == null || !json.IsObject) return;
         foreach (string key in json.Keys)
         {
             var value = json[key];
-            target[key] = convert(value.IsDouble || value.IsInt || value.IsLong ? value.ToJson() : value.ToString());
+            // Skip entries that fail to parse (legacy/foreign data) rather than aborting the
+            // whole load; the constructor default for that key is kept.
+            try { target[key] = convert(value.IsDouble || value.IsInt || value.IsLong ? value.ToJson() : value.ToString()); }
+            catch (FormatException) { }
         }
     }
 }

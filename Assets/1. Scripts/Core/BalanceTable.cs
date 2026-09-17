@@ -137,8 +137,11 @@ namespace Churub.Core
         }
 
         // Preserve currency, ownership and progress. Legacy cached prices cease to be authoritative.
-        public static void Synchronize(GameDataState s)
+        // Returns true when the loaded save predates this balance version, so the caller can
+        // persist the migrated values instead of waiting for the next natural save trigger.
+        public static bool Synchronize(GameDataState s)
         {
+            bool migrated = s.objectData.TryGetValue(VersionKey, out int savedVersion) ? savedVersion < Version : true;
             s.EmployeeAddCount = Math.Max(s.EmployeeAddCount, Math.Min(EmployeeLimit, s.employeeList.Count));
             if (s.guideStep >= 7 || s.EmployeeAddCount > 0) s.SetUnlocked(FirstSaleKey, true);
             if (s.EmployeeAddCount > 0) s.SetUnlocked(FirstEmployeeKey, true);
@@ -156,6 +159,7 @@ namespace Churub.Core
             s.EmployeeMaxStackCount = Math.Max(s.EmployeeMaxStackCount, Effect(UpgradeType.EmployeeMaxStack, s.EmployeeMaxStackUpgradeCount));
             s.PlayerGoldPerBox = Math.Max(s.PlayerGoldPerBox, Effect(UpgradeType.GoldPerBox, s.GoldPerBoxUpgradeCount));
             s.objectData[VersionKey] = Version;
+            return migrated;
         }
     }
 }

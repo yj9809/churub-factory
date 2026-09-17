@@ -15,6 +15,7 @@ namespace Churub.Core
             public const string GameProgress = "gameProgressBool";
             public const string GuideStep = "guideStep";
             public const string NewGame = "newGame";
+            public const string SaveRevision = "saveRevision";
         }
 
         public static class Upgrades

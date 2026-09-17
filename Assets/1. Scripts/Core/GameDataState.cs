@@ -64,6 +64,9 @@ namespace Churub.Core
 
         public int guideStep;
         public bool newGame = true;
+        // Bumped on every local capture. Lets Apply() tell an unsaved local snapshot
+        // apart from one made stale by another device or session.
+        public int saveRevision;
 
         public int UpgradeMaxCount => upgradeCosts[GameDataSchema.Upgrades.MaxCount];
 
