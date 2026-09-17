@@ -32,15 +32,18 @@ public class InAppUpdate : MonoBehaviour
         if (checkedUpdate) return new OperationResult();
         if (activeCheck != null && !activeCheck.IsCompleted)
             return OperationResult.Error(FailureKind.Busy, "Update check is still settling.");
-        activeCheck = CheckInternal();
-        if (await Task.WhenAny(activeCheck, Task.Delay(120000)) != activeCheck)
+        // Only the metadata lookup blocks startup. A flexible update downloads in the
+        // background by design; waiting on the full download here caused startup to time out
+        // on slow connections even though nothing was actually wrong.
+        activeCheck = CheckInfoAsync();
+        if (await Task.WhenAny(activeCheck, Task.Delay(30000)) != activeCheck)
             return OperationResult.Error(FailureKind.Timeout, "Update check timed out.");
         var result = await activeCheck;
         checkedUpdate = result.Succeeded;
         return result;
     }
 
-    private async Task<OperationResult> CheckInternal()
+    private async Task<OperationResult> CheckInfoAsync()
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
         try
@@ -51,18 +54,9 @@ public class InAppUpdate : MonoBehaviour
             while (!info.IsDone) await Task.Yield();
             if (!info.IsSuccessful) return OperationResult.Error(FailureKind.Network, "Update info: " + info.Error);
             var value = info.GetResult();
-            if (value.UpdateAvailability == UpdateAvailability.UpdateNotAvailable) return new OperationResult();
-            if (value.UpdateAvailability != UpdateAvailability.UpdateAvailable)
-                return OperationResult.Error(FailureKind.Rejected, "Update availability: " + value.UpdateAvailability);
-            var request = manager.StartUpdate(value, AppUpdateOptions.FlexibleAppUpdateOptions());
-            while (!request.IsDone) await Task.Yield();
-            if (request.Error != AppUpdateErrorCode.NoError)
-                return OperationResult.Error(FailureKind.Rejected, "Update failed/cancelled: " + request.Error);
-            var complete = manager.CompleteUpdate();
-            while (!complete.IsDone) await Task.Yield();
-            if (!complete.IsSuccessful) return OperationResult.Error(FailureKind.Rejected, "Complete update: " + complete.Error);
-            // Play restarts the application after installation. Do not enter with old code.
-            return OperationResult.Error(FailureKind.Rejected, "Update installed. Restart the application.");
+            if (value.UpdateAvailability == UpdateAvailability.UpdateAvailable)
+                _ = RunFlexibleUpdate(manager, value);
+            return new OperationResult();
         }
         catch (Exception e) { return OperationResult.Error(FailureKind.Unknown, "Update check: " + e.GetType().Name); }
 #else
@@ -70,6 +64,23 @@ public class InAppUpdate : MonoBehaviour
         return new OperationResult();
 #endif
     }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+    // Fire-and-forget: downloads and installs without blocking the startup pipeline.
+    private async Task RunFlexibleUpdate(AppUpdateManager manager, AppUpdateInfo value)
+    {
+        try
+        {
+            var request = manager.StartUpdate(value, AppUpdateOptions.FlexibleAppUpdateOptions());
+            while (!request.IsDone) await Task.Yield();
+            if (request.Error != AppUpdateErrorCode.NoError) return;
+            var complete = manager.CompleteUpdate();
+            while (!complete.IsDone) await Task.Yield();
+            if (complete.IsSuccessful) LogMessage("Update downloaded. Restart to apply.");
+        }
+        catch (Exception e) { Debug.LogWarning("Flexible update failed: " + e.GetType().Name); }
+    }
+#endif
     public void LogMessage(string message)
     {
         if (textPanel != null) textPanel.SetActive(true);

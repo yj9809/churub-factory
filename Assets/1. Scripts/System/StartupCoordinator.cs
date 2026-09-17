@@ -50,6 +50,10 @@ public class StartupCoordinator : MonoBehaviour, IStartupSteps
         }
     }
     public void Retry() => Begin(google);
+    // A player who declines or cannot complete Google sign-in previously had no way into the
+    // game at all: Retry() always reused the failed google flag. Offer guest as an explicit
+    // fallback after a Google attempt fails.
+    public void RetryAsGuest() => Begin(false);
     private void Show(float amount, string message)
     {
         if (destroyed) throw new OperationCanceledException();
@@ -119,6 +123,7 @@ public class StartupCoordinator : MonoBehaviour, IStartupSteps
         {
             GUI.Box(new Rect(20, 20, 600, 130), "Startup stopped: " + LastResult.Kind + "\n" + LastResult.Message);
             if (GUI.Button(new Rect(40, 105, 180, 35), "Retry")) Retry();
+            if (google && GUI.Button(new Rect(240, 105, 180, 35), "Guest Login")) RetryAsGuest();
         }
     }
     private void OnDestroy() { destroyed = true; }
