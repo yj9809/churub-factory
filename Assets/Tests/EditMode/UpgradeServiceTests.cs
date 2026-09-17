@@ -123,14 +123,31 @@ public sealed class UpgradeServiceTests
     }
     [Test] public void Facilities_RespectPairsAndStorePrerequisites()
     {
-        var s=new GameDataState();Assert.That(BalanceTable.FacilityLock(s,"Office"),Is.Not.Null);
-        s.EmployeeAddCount=1;Assert.That(BalanceTable.FacilityLock(s,"Office"),Is.Null);
-        s.SetUnlocked("Office",true);Assert.That(BalanceTable.FacilityLock(s,"Machine1"),Is.Not.Null);
-        s.SetUnlocked("Container1",true);Assert.That(BalanceTable.FacilityLock(s,"Machine1"),Is.Null);
-        Assert.That(BalanceTable.FacilityLock(s,"Container2"),Is.Not.Null);
-        s.SetUnlocked("Machine1",true);Assert.That(BalanceTable.FacilityLock(s,"Stall"),Is.Null);
-        Assert.That(BalanceTable.FacilityLock(s,"Store"),Is.Not.Null);
-        s.SetUnlocked("Stall",true);s.SetUnlocked("Container2",true);s.SetUnlocked("Machine2",true);
-        Assert.That(BalanceTable.FacilityLock(s,"Store"),Is.Null);
+        string[] order = {"Office", "Container1", "Machine1", "Container2", "Machine2", "Stall", "Store"};
+        var s = new GameDataState();
+        Assert.That(BalanceTable.FacilityLock(s, "Office"), Is.Not.Null);
+        s.EmployeeAddCount = 1;
+
+        for (int step = 0; step < order.Length; step++)
+        {
+            Assert.That(BalanceTable.NextFacility(s), Is.EqualTo(order[step]));
+            Assert.That(BalanceTable.FacilityLock(s, order[step]), Is.Null);
+            for (int later = step + 1; later < order.Length; later++)
+                Assert.That(BalanceTable.FacilityLock(s, order[later]), Is.Not.Null);
+            s.SetUnlocked(order[step], true);
+        }
+
+        Assert.That(BalanceTable.NextFacility(s), Is.Null);
+    }
+
+    [Test] public void UpgradedStore_CountsReplacedStallAsCompleted()
+    {
+        var s = new GameDataState { EmployeeAddCount = 1 };
+        foreach (var key in new[] {"Office", "Container1", "Machine1", "Container2", "Machine2", "Store"})
+            s.SetUnlocked(key, true);
+        s.SetUnlocked("Stall", false);
+
+        Assert.That(BalanceTable.IsFacilityUnlocked(s, "Stall"), Is.True);
+        Assert.That(BalanceTable.NextFacility(s), Is.Null);
     }
 }

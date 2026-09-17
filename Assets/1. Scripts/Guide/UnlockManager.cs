@@ -28,7 +28,9 @@ public class UnlockManager : MonoBehaviour
     [TitleGroup("UI"), SerializeField] private Image _FillImage;
     [TitleGroup("UI"), ProgressBar(0, 100), SerializeField] private float currentFill;
     private int amount;
-    public bool IsPurchased => isUnlocked || (baseCost != null && baseCost.IsUnlocked(unlockType.ToString()));
+    public UnlockType Type => unlockType;
+    public bool IsPurchased => isUnlocked ||
+        (baseCost != null && BalanceTable.IsFacilityUnlocked(baseCost, unlockType.ToString()));
     private string lockReason;
     private Coroutine unlockRoutine;
     private TMPro.TMP_Text[] priceLabels;

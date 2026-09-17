@@ -122,20 +122,56 @@ public class Guide : MonoBehaviour
         if (claimButton != null) claimButton.gameObject.SetActive(claim);
         if (claim)
         {
+            RefreshExpansionTargets(null);
             UpdateGuide("첫 직원이 도착했어요", "무료 직원을 받고 원재료 운반을 맡겨보세요.", "", false);
             guideLine.gameObject.SetActive(false);
             return;
         }
-        // Conditions are enforced by each facility, not by the guide's selected goal.
-        for (int i = 7; i < targets.Length; i++) SetActiveTarget(i);
+
+        string nextFacility = BalanceTable.NextFacility(baseCost);
+        RefreshExpansionTargets(nextFacility);
         guideLine.gameObject.SetActive(false);
-        if (!baseCost.IsUnlocked("Office"))
-            UpdateGuide("사무실 건설", "강화와 고용을 시작하세요.", BalanceTable.FacilityCost("Office") + " 골드", false);
-        else if (baseCost.EmployeeAddCount < 2 || BalanceTable.Lines(baseCost) < 2)
-            UpdateGuide("다음 성장을 선택하세요", "가공품 직원 고용 또는 생산라인 확장", "직원 " + BalanceTable.Cost(UpgradeType.EmployeeAdd, 1) + " / 라인 " + (BalanceTable.FacilityCost("Container1") + BalanceTable.FacilityCost("Machine1")), false);
-        else if (baseCost.EmployeeAddCount < 3 || BalanceTable.Lines(baseCost) < 3 || !baseCost.IsUnlocked("Store"))
-            UpdateGuide("공장 확장", "포장 직원 · 세 번째 라인 · 상점을 자유롭게 선택하세요.", "직원 강화도 확인하세요", false);
-        else _GuideDone();
+        if (nextFacility == null)
+        {
+            _GuideDone();
+            return;
+        }
+
+        string facilityName = FacilityName(nextFacility);
+        UpdateGuide(facilityName + " 해금", facilityName + " 건설하기",
+            BalanceTable.FacilityCost(nextFacility) + " 골드", false);
+    }
+
+    private void RefreshExpansionTargets(string nextFacility)
+    {
+        for (int i = 7; i < targets.Length; i++)
+        {
+            UnlockManager unlock = targets[i].GetComponent<UnlockManager>();
+            if (unlock != null)
+            {
+                bool isNext = unlock.Type.ToString() == nextFacility;
+                targets[i].SetActive(isNext && !unlock.IsPurchased);
+                continue;
+            }
+
+            // The office interaction point is not a facility unlock pad.
+            targets[i].SetActive(baseCost.IsUnlocked(GameDataSchema.Progress.Office));
+        }
+    }
+
+    private static string FacilityName(string key)
+    {
+        switch (key)
+        {
+            case "Office": return "사무실";
+            case "Container1": return "추가 컨테이너 1";
+            case "Machine1": return "추가 컨베이어 벨트 1";
+            case "Container2": return "추가 컨테이너 2";
+            case "Machine2": return "추가 컨베이어 벨트 2";
+            case "Stall": return "노점";
+            case "Store": return "상점";
+            default: return key;
+        }
     }
 
     private void GuideButton()

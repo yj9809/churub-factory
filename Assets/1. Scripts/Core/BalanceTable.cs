@@ -36,6 +36,10 @@ namespace Churub.Core
         private static readonly int[] EmployeeCapacity = {3, 4, 5, 6, 8, 10};
         private static readonly int[] SalePrice = {50, 65, 80, 95, 110, 125};
         private static readonly int[] Rewards = {25, 25, 50, 50, 50, 100, 100};
+        private static readonly string[] FacilityOrder =
+        {
+            "Office", "Container1", "Machine1", "Container2", "Machine2", "Stall", "Store"
+        };
 
         public static int MaxLevel(UpgradeType type) => type == UpgradeType.EmployeeAdd ? 3 : 5;
         public static int Cost(UpgradeType type, int level)
@@ -90,17 +94,34 @@ namespace Churub.Core
                 default: throw new ArgumentOutOfRangeException(nameof(key));
             }
         }
+
+        public static bool IsFacilityUnlocked(GameDataState s, string key)
+        {
+            if (s == null) throw new ArgumentNullException(nameof(s));
+            return key == "Stall"
+                ? s.IsUnlocked("Stall") || s.IsUnlocked("Store")
+                : s.IsUnlocked(key);
+        }
+
+        public static string NextFacility(GameDataState s)
+        {
+            if (s == null) throw new ArgumentNullException(nameof(s));
+            foreach (string key in FacilityOrder)
+                if (!IsFacilityUnlocked(s, key)) return key;
+            return null;
+        }
+
         public static string FacilityLock(GameDataState s, string key)
         {
             if (key == "Office") return s.EmployeeAddCount < 1 ? "첫 직원 받기 필요" : null;
-            if (!s.IsUnlocked("Office")) return "사무실 건설 필요";
             switch (key)
             {
-                case "Container1": return null;
+                case "Container1": return IsFacilityUnlocked(s, "Office") ? null : "사무실 건설 필요";
                 case "Machine1": return s.IsUnlocked("Container1") ? null : "추가 컨테이너 1 필요";
-                case "Container2": case "Stall": return Lines(s) >= 2 ? null : "생산라인 2개 필요";
+                case "Container2": return s.IsUnlocked("Machine1") ? null : "추가 컨베이어 벨트 1 필요";
                 case "Machine2": return s.IsUnlocked("Container2") ? null : "추가 컨테이너 2 필요";
-                case "Store": return !s.IsUnlocked("Stall") ? "노점 건설 필요" : Lines(s) < 3 ? "생산라인 3개 필요" : null;
+                case "Stall": return s.IsUnlocked("Machine2") ? null : "추가 컨베이어 벨트 2 필요";
+                case "Store": return IsFacilityUnlocked(s, "Stall") ? null : "노점 건설 필요";
                 default: throw new ArgumentOutOfRangeException(nameof(key));
             }
         }
