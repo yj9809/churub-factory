@@ -23,12 +23,25 @@ namespace Churub.Core
     // Start and callbacks run on Unity's main thread; no SDK call is dispatched via Task.Run.
     public sealed class RequestGate
     {
+        // If the SDK callback never arrives at all, the gate must not stay Busy for the rest of
+        // the process. A late callback after this deadline only closes over stale settled/expired
+        // flags and is ignored; it cannot unlock a newer request either way.
+        private static readonly TimeSpan GraceAfterTimeout = TimeSpan.FromSeconds(60);
         private bool pending;
-        public bool Pending => pending;
+        private DateTime graceDeadline;
+        public bool Pending
+        {
+            get
+            {
+                if (pending && DateTime.UtcNow >= graceDeadline) pending = false;
+                return pending;
+            }
+        }
         public async Task<OperationResult> Run(Action<Action<OperationResult>> start, int timeoutMs = 30000)
         {
-            if (pending) return OperationResult.Error(FailureKind.Busy, "Previous request is still settling.");
+            if (Pending) return OperationResult.Error(FailureKind.Busy, "Previous request is still settling.");
             pending = true;
+            graceDeadline = DateTime.UtcNow + TimeSpan.FromMilliseconds(timeoutMs) + GraceAfterTimeout;
             var completion = new TaskCompletionSource<OperationResult>();
             bool expired = false;
             bool settled = false;
