@@ -16,7 +16,9 @@ public class ChangeObject : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Ingredient"))
+        if (other.gameObject.activeInHierarchy && other.TryGetComponent<Item>(out var item)
+            && item.Type == ItemType.Ingredient && !item.IsStored
+            && other.TryGetComponent<Rigidbody>(out var sourceBody))
         {
             GameObject newObject = pool.GetObj(objectB);
             newObject.transform.position = newTransform.position; 
@@ -29,7 +31,7 @@ public class ChangeObject : MonoBehaviour
                 rd.freezeRotation = true;
             }
 
-            rd.linearVelocity = other.GetComponent<Rigidbody>().linearVelocity;
+            rd.linearVelocity = sourceBody.linearVelocity;
             pool.ReturnObjecte(other.gameObject);
         }
     }

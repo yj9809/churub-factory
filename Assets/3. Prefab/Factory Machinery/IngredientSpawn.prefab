@@ -260,16 +260,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Work Point (0)
       objectReference: {fileID: 0}
-    - target: {fileID: 3740296066875838150, guid: 0b31801d45fcc514aa711763b19e2747,
-        type: 3}
-      propertyPath: wpType
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3740296066875838150, guid: 0b31801d45fcc514aa711763b19e2747,
-        type: 3}
-      propertyPath: _ingredientMaker
-      value: 
-      objectReference: {fileID: 2986155824567841958}
     - target: {fileID: 7646081294353099358, guid: 0b31801d45fcc514aa711763b19e2747,
         type: 3}
       propertyPath: m_Size.x
@@ -280,9 +270,17 @@ PrefabInstance:
       propertyPath: m_Size.z
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 8365889305115178693, guid: 0b31801d45fcc514aa711763b19e2747, type: 3}
+      propertyPath: action
+      value:
+      objectReference: {fileID: 1113200670999587838}
     m_RemovedComponents:
     - {fileID: 2944756444144404592, guid: 0b31801d45fcc514aa711763b19e2747, type: 3}
     - {fileID: 2944756444144404593, guid: 0b31801d45fcc514aa711763b19e2747, type: 3}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2944756444144404595, guid: 0b31801d45fcc514aa711763b19e2747, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1113200670999587838}
   m_SourcePrefab: {fileID: 100100000, guid: 0b31801d45fcc514aa711763b19e2747, type: 3}
 --- !u!4 &5809088000862875893 stripped
 Transform:
@@ -290,3 +288,22 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 8666023682913564807}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1001694710982462105 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2944756444144404595, guid: 0b31801d45fcc514aa711763b19e2747, type: 3}
+  m_PrefabInstance: {fileID: 8666023682913564807}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1113200670999587838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001694710982462105}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea6916179b1244db941f5028ef4f3f25, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  endpoint: {fileID: 2986155824567841958}
+  playerOnly: 0

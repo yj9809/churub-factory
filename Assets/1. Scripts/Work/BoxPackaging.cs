@@ -10,8 +10,13 @@ public enum PackagingType
     On,
     Off
 }
-public class BoxPackaging : MonoBehaviour, IObjectDataSave
+public class BoxPackaging : MonoBehaviour, IObjectDataSave, IItemTransferEndpoint
 {
+    public bool TryTransfer(CarrierInventory inventory, Transform carryParent)
+    {
+        return ItemTransferUtility.TryMove(inventory, waiting, storageParent);
+    }
+
     [SerializeField] private Transform storageParent;
     [SerializeField] private Transform boxParent;
     [SerializeField] private Transform packagingBoxParent;
@@ -24,17 +29,11 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
     private GameObject newBox;
     private TMP_Text boxCountTxt;
 
-    public Transform churuStorageParent { get { return storageParent; } }
-
-    private Stack<GameObject> churuStorage = new Stack<GameObject>();
-    public Stack<GameObject> ChuruStorage
-    {
-        get { return churuStorage; }
-        set
-        {
-            churuStorage = value;
-        }
-    }
+    private readonly ItemBuffer waiting = new ItemBuffer(int.MaxValue, ItemType.Churu);
+    // Keep a completed box owned until its output tween finishes, so collection
+    // cannot cancel the callback that resets packaging progress.
+    private readonly ItemBuffer outputInTransit = new ItemBuffer(1, ItemType.Box);
+    public int WaitingCount => waiting.Count;
 
     private PackagingType packaging = PackagingType.On;
 
@@ -53,9 +52,13 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
         for (int i = 0; i < data.baseCost.PackagingWaitCount; i++)
         {
             GameObject newChuru = PoolingManager.Instance.GetObj(churu);
-            newChuru.transform.parent = churuStorageParent;
-            churuStorage.Push(newChuru);
-            newChuru.transform.localPosition = new Vector3(0, 0 + (Utility.ObjRendererCheck(newChuru) * churuStorage.Count), 0);
+            if (newChuru != null && newChuru.TryGetComponent<Item>(out var restored)
+                && ItemTransferUtility.TryCollect(restored, waiting, storageParent,
+                    stackIndex: waiting.Count + 1, animate: false))
+                continue;
+            PoolingManager.Instance.ReturnObjecte(newChuru);
+            Debug.LogError("Cannot restore packaging Item.", this);
+            break;
         }
 
         count = data.baseCost.PackagingCount;
@@ -71,7 +74,7 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
 
     public void Packaging(Player p, Employee employee)
     {
-        if (newBox == null && churuStorage.Count != 0 && boxStorage.BoxStack.Count < 40)
+        if (newBox == null && waiting.Count != 0 && !boxStorage.IsFull)
         {
             newBox = Instantiate(box, boxParent);
             newBox.name = box.name;
@@ -79,7 +82,7 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
             newBox.transform.GetChild(0).gameObject.SetActive(true);
         }
 
-        if (churuStorage.Count != 0 && newBox != null)
+        if (waiting.Count != 0 && newBox != null)
         {
             ChuruMove(p, employee);
         }
@@ -95,7 +98,9 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
     {
         if(packaging != PackagingType.Off)
         {
-            GameObject churu = churuStorage.Pop();
+            if (!waiting.TryPop(out var item)) return;
+            GameObject churu = item.gameObject;
+            churu.transform.DOKill();
 
             if(p != null)
                 p.DoBoxPackagingAnimationPlayer();
@@ -122,10 +127,16 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
     {
         if(count == maxCount)
         {
+            if (!newBox.TryGetComponent<Item>(out var output) || !outputInTransit.TryAdd(output))
+            {
+                Debug.LogError("Cannot release packaging Box Item.", this);
+                return;
+            }
             newBox.AddComponent<Rigidbody>();
             newBox.transform.DOMove(packagingBoxParent.position, 0.3f).SetEase(Ease.InBack)
                 .OnComplete(() =>
                 {
+                    outputInTransit.TryPop(out _);
                     newBox.transform.GetChild(0).gameObject.SetActive(false);
                     newBox = null;
                     count = 0;
@@ -141,7 +152,7 @@ public class BoxPackaging : MonoBehaviour, IObjectDataSave
 
     public void ObjectDataSave()
     {
-        data.baseCost.PackagingWaitCount = churuStorage.Count;
+        data.baseCost.PackagingWaitCount = waiting.Count;
         data.baseCost.PackagingCount = count;
     }
 }

@@ -3,18 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using Sirenix.OdinInspector;
 
-public class IngredientMaker : MonoBehaviour, IStackable
+public class IngredientMaker : MonoBehaviour, IStackable, IItemTransferEndpoint
 {
+    public bool TryTransfer(CarrierInventory inventory, Transform carryParent)
+    {
+        return ItemTransferUtility.TryMove(storage, inventory, carryParent);
+    }
+
     [TabGroup("IngredientMaker"), SerializeField] private GameObject objPrefab;
     [TabGroup("IngredientMaker"), SerializeField] private Transform objSpawnPoint;
     [TabGroup("IngredientMaker"), SerializeField] private float objSpawnTime = 2f;
     [TabGroup("IngredientMaker"), SerializeField] private int maxObj = 10;
 
-    private Stack<GameObject> churuStack = new Stack<GameObject>();
-    public Stack<GameObject> ChuruStack
+    // Intake stays unbounded; maxObj controls generation, as in the original flow.
+    private readonly ItemBuffer storage = new ItemBuffer(int.MaxValue, ItemType.Ingredient);
+
+    public bool TryCollect(Item item, Transform stackParent)
     {
-        get { return churuStack; }
-        set { churuStack = value; }
+        return ItemTransferUtility.TryCollect(item, storage, stackParent);
     }
 
     private float spawnTimer = 0f;
@@ -40,7 +46,7 @@ public class IngredientMaker : MonoBehaviour, IStackable
         SpawnGameObject();
 
         // 타겟 업데이트 로직
-        if (ChuruStack.Count == 0)
+        if (storage.Count == 0)
         {
             gm.UpdateTargets();
         }
@@ -51,7 +57,7 @@ public class IngredientMaker : MonoBehaviour, IStackable
         spawnTimer += Time.deltaTime;
         if (spawnTimer >= objSpawnTime)
         {
-            if (ChuruStack.Count < maxObj)
+            if (storage.Count < maxObj)
             {
                 GameObject newChurub = PoolingManager.Instance.GetObj(objPrefab);
                 newChurub.transform.position = objSpawnPoint.position;
@@ -64,7 +70,7 @@ public class IngredientMaker : MonoBehaviour, IStackable
         }
     }
 
-    public int GetStackCount() => churuStack.Count;
+    public int GetStackCount() => storage.Count;
     public Transform GetTransform() => transform.GetChild(0).transform;
     public int GetTypeNum() => 0;
 }

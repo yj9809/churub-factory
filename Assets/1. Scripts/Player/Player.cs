@@ -33,25 +33,15 @@ public class Player : MonoBehaviour, IObjectDataSave
     private bool? cartVisible;
     private Tween cartScaleTween;
 
-    private Stack<GameObject> ingredientStack = new Stack<GameObject>();
-    public Stack<GameObject> IngredientStack
+    private readonly CarrierInventory inventory = new CarrierInventory(0);
+    public CarrierInventory Inventory
     {
-        get { return ingredientStack; }
-        set { ingredientStack = value; }
-    }
-
-    private Stack<GameObject> churuStack = new Stack<GameObject>();
-    public Stack<GameObject> ChuruStack
-    {
-        get { return churuStack; }
-        set { churuStack = value; }
-    }
-
-    private Stack<GameObject> boxStack = new Stack<GameObject>();
-    public Stack<GameObject> BoxStack
-    {
-        get { return boxStack; }
-        set { boxStack = value; }
+        get
+        {
+            // count < a fractional limit permits ceil(limit) items, as before.
+            inventory.Capacity = baseCost == null ? 0 : Mathf.Max(0, Mathf.CeilToInt(baseCost.PlayerMaxStackCount + buffMaxObjStackCount));
+            return inventory;
+        }
     }
 
     public float MaxObjStackCount
@@ -153,7 +143,7 @@ public class Player : MonoBehaviour, IObjectDataSave
 
     public void OnCart()
     {
-        bool shouldShowCart = ingredientStack.Count > 0 || boxStack.Count > 0 || churuStack.Count > 0;
+        bool shouldShowCart = !Inventory.IsEmpty;
         if (cartVisible == shouldShowCart)
             return;
 
@@ -181,65 +171,7 @@ public class Player : MonoBehaviour, IObjectDataSave
         animator.SetLayerWeight(1, 0);
     }
 
-    #region 물건 주고 받는 코드들
-    // 이건 재료 받는 코드
-    public void TakeObject(IngredientMaker im)
-    {
-        if (im.ChuruStack.Count > 0 && 
-            MaxObjStackCount + buffMaxObjStackCount > ingredientStack.Count && 
-            boxStack.Count <= 0 && churuStack.Count <= 0)
-        {
-            Utility.ObjectDrop(cartTransform, null, im.ChuruStack, ingredientStack, 1);
-            Vibration.VibratePop();
-        }
-    }
-
-    // 이건 컨베이어에 올리는 코드
-    public void GiveObject(ConveyorBelt cb)
-    {
-        if (ingredientStack.Count > 0)
-        {
-            Utility.ObjectDrop(cb.IngredientStorage, null, ingredientStack, cb.CbStack, 1);
-            Vibration.VibratePop();
-        }
-    }
-
-    // 이건 츄룹이나 박스 받을 때 쓰는 코드 bool 값에 따라 츄룹 받을건지 박스 받을건지 달라짐
-    public void GiveObject(BoxStorage bs, bool isChuru)
-    {
-        Stack<GameObject> newStack = isChuru ? churuStack : boxStack;
-        Stack<GameObject> checkStack = isChuru ? boxStack : churuStack;
-
-        if (bs.BoxStack.Count > 0 && 
-            MaxObjStackCount + buffMaxObjStackCount > newStack.Count && 
-            ingredientStack.Count <= 0 && checkStack.Count <= 0)
-        {
-            Utility.ObjectDrop(cartTransform, null, bs.BoxStack, newStack, 1);
-            Vibration.VibratePop();
-        }
-    }
-
-    // 이건 츄룹을 박스 포장하는 곳으로 옮길 때 쓰는 코드
-    public void GiveObject(BoxPackaging bp)
-    {
-        if (churuStack.Count > 0)
-        {
-            Utility.ObjectDrop(bp.churuStorageParent, null, churuStack, bp.ChuruStorage, 4);
-            Vibration.VibratePop();
-        }
-    }
-
-    // 이건 트럭에 박스 옮기는 코드
-    public void GiveObject(Truck tr)
-    {
-        if (boxStack.Count > 0 && ingredientStack.Count <= 0 && tr.CanLoad)
-        {
-            Utility.ObjectDrop(tr.BoxLoadingTransform, null, boxStack, tr.BoxStack, 3);
-            tr.BoxCountTextUpdate();
-            Vibration.VibratePop();
-        }
-    }
-    #endregion
+    public Transform CarryParent => cartTransform;
 
     // 이건 사용중인 종업원들 정보를 플레이어가 가지고 있어서
     // 게임 저장할 때 플레이어에서 데이터 매니저로 처리하는 코드
@@ -254,13 +186,10 @@ public class Player : MonoBehaviour, IObjectDataSave
 
     private void OnCollisionEnter(Collision collision)
     {
-        if(collision.gameObject.CompareTag("Ingredient") && ingredientStack.Count < MaxObjStackCount + buffMaxObjStackCount && churuStack.Count == 0 && boxStack.Count == 0)
+        if (collision.gameObject.TryGetComponent<Item>(out var item)
+            && item.Type == ItemType.Ingredient
+            && ItemTransferUtility.TryCollect(item, Inventory, cartTransform))
         {
-            Debug.Log("실행");
-            Rigidbody rd = collision.transform.GetComponent<Rigidbody>();
-            if (rd != null)
-                Destroy(collision.transform.GetComponent<Rigidbody>());
-            Utility.ObjectDrop(cartTransform, collision.gameObject, null, ingredientStack, 0);
             Vibration.VibratePop();
         }
     }

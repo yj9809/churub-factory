@@ -333,43 +333,43 @@ public class Guide : MonoBehaviour
     {
         SetActiveTarget(0);
         UpdateGuide("공장냥의 첫걸음 1", "원재료 창고로 이동", ""
-            , player.IngredientStack.Count > 0);
+            , player.Inventory.ContainsType(ItemType.Ingredient));
     }
     private void _Step1()
     {
         SetActiveTarget(1);
         UpdateGuide("공장냥의 첫걸음 2", "원재료를 컨베이어 벨트로 옮기기", ""
-            , player.IngredientStack.Count <= 0);
+            , !player.Inventory.ContainsType(ItemType.Ingredient));
     }
     private void _Step2()
     {
         SetActiveTarget(2);
         UpdateGuide("공장냥의 첫걸음 3", "완성된 츄릅을 박스 포장대로 옮기기", ""
-            , player.ChuruStack.Count > 0);
+            , player.Inventory.ContainsType(ItemType.Churu));
     }
     private void _Step3()
     {
         SetActiveTarget(3);
-        UpdateGuide("공장냥의 첫걸음 4", "츄룹 창고 이동 작업", boxPackaging.ChuruStorage.Count.ToString() + " / 5"
-            , player.ChuruStack.Count <= 0 && boxPackaging.ChuruStorage.Count >= 5);
+        UpdateGuide("공장냥의 첫걸음 4", "츄룹 창고 이동 작업", boxPackaging.WaitingCount.ToString() + " / 5"
+            , !player.Inventory.ContainsType(ItemType.Churu) && boxPackaging.WaitingCount >= 5);
     }
     private void _Step4()
     {
         SetActiveTarget(4);
         UpdateGuide("공장냥의 첫걸음 5", "박스 포장대에서 박스 포장하기", ""
-            , boxStorage.bsType == BoxStorageType.BoxStorage && boxStorage.BoxStack.Count >= 1);
+            , boxStorage.bsType == BoxStorageType.BoxStorage && boxStorage.Count >= 1);
     }
     private void _Step5()
     {
         truck.gameObject.SetActive(true);
         SetActiveTarget(5);
         UpdateGuide("공장냥의 첫걸음 6", "츄릅박스를 트럭에 싣기", ""
-            , player.BoxStack.Count > 0);
+            , player.Inventory.ContainsType(ItemType.Box));
     }
     private void _Step6()
     {
         SetActiveTarget(6);
-        UpdateGuide("공장냥의 첫걸음 fin", "츄릅박스 5개를 트럭에 실어 판매하기", truck.BoxStack.Count.ToString() + " / 5"
+        UpdateGuide("공장냥의 첫걸음 fin", "츄릅박스 5개를 트럭에 실어 판매하기", truck.LoadedCount.ToString() + " / 5"
             , baseCost.IsUnlocked(BalanceTable.FirstSaleKey));
     }
     private void _GuideDone()

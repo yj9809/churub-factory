@@ -11,8 +11,17 @@ public enum CarType
     Come
 }
 
-public class Truck : MonoBehaviour, IObjectDataSave
+public class Truck : MonoBehaviour, IObjectDataSave, IItemTransferEndpoint
 {
+    public bool TryTransfer(CarrierInventory inventory, Transform carryParent)
+    {
+        if (!CanLoad || !ItemTransferUtility.TryMove(
+            inventory, cargo, boxLoadingTransform, useWorldPosition: true))
+            return false;
+        BoxCountTextUpdate();
+        return true;
+    }
+
     [SerializeField] private Transform[] checkPoint;
     [SerializeField] private GameObject workPoint;
     [SerializeField] private TMP_Text boxCountTxt;
@@ -26,18 +35,12 @@ public class Truck : MonoBehaviour, IObjectDataSave
 
     private bool doorOpen = false;
 
-    [SerializeField] private Stack<GameObject> boxStack = new Stack<GameObject>();
-    public Stack<GameObject> BoxStack
-    {
-        get { return boxStack; }
-        set { boxStack = value;}
-    }
+    private readonly ItemBuffer cargo = new ItemBuffer(Churub.Core.BalanceTable.TruckCapacity, ItemType.Box);
+    private int restoredBoxCount;
+    public int LoadedCount => restoredBoxCount + cargo.Count;
 
     [SerializeField] private Transform boxLoadingTransform;
-    public Transform BoxLoadingTransform { get { return boxLoadingTransform; } }
-
-
-    public bool CanLoad => workPoint.activeInHierarchy && boxStack.Count < Churub.Core.BalanceTable.TruckCapacity;
+    public bool CanLoad => workPoint.activeInHierarchy && LoadedCount < Churub.Core.BalanceTable.TruckCapacity;
 
     private int currentCheckPoint = 1;
 
@@ -56,16 +59,16 @@ public class Truck : MonoBehaviour, IObjectDataSave
     // Update is called once per frame
     void Update()
     {
-        if(boxStack.Count >= Churub.Core.BalanceTable.TruckCapacity)
+        if(LoadedCount >= Churub.Core.BalanceTable.TruckCapacity)
         {
             workPoint.SetActive(false);
             boxCountTxt.gameObject.SetActive(false);
             Door.SetBool("Open", true);
             ct = CarType.Come;
 
-            // boxStack이 모두 채워졌을 때 골드획득
+            // 적재가 완료되었을 때 골드 획득
             Debug.Log($"gold : {gm.P.GoldPerBox}, buff : {gm.P.buffGold}");
-            UIManager.Instance.AddGold(boxStack.Count * (int)(gm.P.GoldPerBox + (gm.P.GoldPerBox * gm.P.buffGold)));
+            UIManager.Instance.AddGold(LoadedCount * (int)(gm.P.GoldPerBox + (gm.P.GoldPerBox * gm.P.buffGold)));
             ClearBoxStack();
             data.baseCost.SetUnlocked(Churub.Core.BalanceTable.FirstSaleKey, true);
         }
@@ -79,10 +82,8 @@ public class Truck : MonoBehaviour, IObjectDataSave
     }
     private void SetBoxStackCount()
     {
-        for (int i = 0; i < data.baseCost.TruckBoxCount; i++)
-        {
-            boxStack.Push(null);
-        }
+        restoredBoxCount = Mathf.Max(0, data.baseCost.TruckBoxCount);
+        cargo.Capacity = Mathf.Max(0, Churub.Core.BalanceTable.TruckCapacity - restoredBoxCount);
         BoxCountTextUpdate();
     }
     private void CheckPointMove()
@@ -150,17 +151,16 @@ public class Truck : MonoBehaviour, IObjectDataSave
     }
     public void BoxCountTextUpdate()
     {
-        boxCountTxt.text = $"{boxStack.Count} / {Churub.Core.BalanceTable.TruckCapacity}";
+        boxCountTxt.text = $"{LoadedCount} / {Churub.Core.BalanceTable.TruckCapacity}";
     }
     private void ClearBoxStack()
     {
-        // 게임 오브젝트도 함께 없애기 위해 클리어 전에 리턴 풀링 해주는 코드.
-        foreach (GameObject item in boxStack)
-        {
-            PoolingManager.Instance.ReturnObjecte(item);
-        }
-        boxStack.Clear();
+        while (cargo.TryPop(out var item))
+            PoolingManager.Instance.ReturnObjecte(item == null ? null : item.gameObject);
+        restoredBoxCount = 0;
+        cargo.Capacity = Churub.Core.BalanceTable.TruckCapacity;
     }
+
     public void DoorOpen()
     {
         doorOpen = true;
@@ -168,7 +168,7 @@ public class Truck : MonoBehaviour, IObjectDataSave
 
     public void ObjectDataSave()
     {
-        if(boxStack.Count < Churub.Core.BalanceTable.TruckCapacity)
-            data.baseCost.TruckBoxCount = boxStack.Count;
+        if(LoadedCount < Churub.Core.BalanceTable.TruckCapacity)
+            data.baseCost.TruckBoxCount = LoadedCount;
     }
 }

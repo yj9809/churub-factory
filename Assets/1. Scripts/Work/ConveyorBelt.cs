@@ -7,8 +7,13 @@ using Sirenix.OdinInspector;
 
 public enum ConveyorBeltType { Ingredient, Churu }
 
-public class ConveyorBelt : MonoBehaviour
+public class ConveyorBelt : MonoBehaviour, IItemTransferEndpoint
 {
+    public bool TryTransfer(CarrierInventory inventory, Transform carryParent)
+    {
+        return ItemTransferUtility.TryMove(inventory, input, ingredientStorage);
+    }
+
     [TabGroup("Setting"), SerializeField] private float speed = 3f;
     [TabGroup("Setting"), SerializeField] private float placeObjectTime = 3f;
     [TabGroup("Setting"), SerializeField] private Vector3 direction = Vector3.forward;
@@ -47,17 +52,7 @@ public class ConveyorBelt : MonoBehaviour
     private bool isBreakDown = false;
 
     [TabGroup("Transform"), SerializeField] private Transform ingredientStorage;
-    public Transform IngredientStorage
-    {
-        get { return ingredientStorage; }
-    }
-
-    private Stack<GameObject> cbStack = new Stack<GameObject>();
-    public Stack<GameObject> CbStack
-    {
-        get { return cbStack; }
-        set { cbStack = value; }
-    }
+    private readonly ItemBuffer input = new ItemBuffer(int.MaxValue, ItemType.Ingredient);
 
     private void Start()
     {
@@ -73,7 +68,7 @@ public class ConveyorBelt : MonoBehaviour
 
     private void Update()
     {
-        if(boxStorage.BoxStack.Count >= 40)
+        if(boxStorage.IsFull)
         {
             isOn = false;
         }
@@ -98,12 +93,12 @@ public class ConveyorBelt : MonoBehaviour
         {
             float randomValue = Random.value;
             yield return new WaitForSeconds(placeObjectTime);
-            if(breakdownUnlocked && cbStack.Count > 0 && randomValue < breakDownProb && nonBreakDownTime <=0)
+            if(breakdownUnlocked && input.Count > 0 && randomValue < breakDownProb && nonBreakDownTime <=0)
             {
                 BreakDownEvent();
             }
 
-            if (cbStack.Count > 0 && isOn && !isBreakDown)
+            if (input.Count > 0 && isOn && !isBreakDown)
             {
                 OnConveyorObj();
             }
@@ -125,8 +120,9 @@ public class ConveyorBelt : MonoBehaviour
     // 가독성을 위해 따로 함수로 빼뒀습니다.
     private void OnConveyorObj()
     {
-        PushStack();
-        GameObject newChuru = cbStack.Pop();
+        if (onBelt == null || !input.TryPop(out var item)) return;
+        GameObject newChuru = item.gameObject;
+        newChuru.transform.DOKill();
         newChuru.transform.position = onBelt.position;
         newChuru.transform.SetParent(onBelt);
 
@@ -158,22 +154,6 @@ public class ConveyorBelt : MonoBehaviour
         nonBreakDownTime = Churub.Core.BalanceTable.BreakdownProtection;
         StartCoroutine(PlaceObject());
         StartCoroutine(DisplayImgChange());
-    }
-
-    // 임시로 스택 관련 버그 발생 문제 해결 코드.
-    // 컨베이어 벨트 옮길 때마다 스택 초기화 후 자식 오브젝트들을 다시 푸쉬하는 코드로 변경, 추후 메모리 문제나 다른 문제 발생 할 수 있을꺼 같음.
-    // 추후 좋은 방법 생기면 다시 수정 예정.
-    private void PushStack()
-    {
-        if(ingredientStorage.childCount != cbStack.Count)
-        {
-            Debug.Log("스택 수정");
-            cbStack.Clear();
-            foreach (Transform item in ingredientStorage)
-            {
-                cbStack.Push(item.gameObject);
-            }
-        }
     }
 
     private void OnCollisionStay(Collision collision)

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Sirenix.OdinInspector;
+using DG.Tweening;
 
 // 이건 내 작품
 // 이번엔 큐로 작업한게 아니라 딕셔너리를 활용해 봤음
@@ -65,6 +66,15 @@ public class PoolingManager : Singleton<PoolingManager>
             return;
         }
 
+        if (returnPrefab.TryGetComponent<Item>(out var item))
+        {
+            if (item.IsStored)
+            {
+                Debug.LogError("Remove the Item from its buffer before returning it to the pool.", returnPrefab);
+                return;
+            }
+            returnPrefab.transform.DOKill();
+        }
         returnPrefab.SetActive(false);
 
         // 여기 if 문에서 해당 키가 있는지 확인을 함
