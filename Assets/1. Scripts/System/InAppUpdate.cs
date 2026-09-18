@@ -1,125 +1,89 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
-using Google.Play.Common;
 using Google.Play.AppUpdate;
 using TMPro;
+using Churub.Core;
 
 public class InAppUpdate : MonoBehaviour
 {
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI logText;
     [SerializeField] private GameObject textPanel;
-
     [Header("Manager")]
     [SerializeField] private BackendManager backendManager;
-    private AppUpdateManager appUpdateManager;
+    private Task<OperationResult> activeCheck;
+    private bool checkedUpdate;
 
     private void Start()
     {
-        textPanel.SetActive(false);
-        
-#if UNITY_EDITOR
-        backendManager.GuestLogin();
-        LogMessage("인앱 업데이트는 에디터에서는\n지원되지 않습니다.");
+        if (textPanel != null) textPanel.SetActive(false);
+        if (backendManager == null) backendManager = FindObjectOfType<BackendManager>();
+        if (backendManager == null) { LogMessage("Missing startup bridge."); return; }
+#if UNITY_ANDROID && !UNITY_EDITOR
+        backendManager.StartGoogleLogin();
 #else
-StartCoroutine(Init());
+        backendManager.GuestLogin();
 #endif
     }
-    private IEnumerator Init()
-    {
-        yield return new WaitForSeconds(0.5f);
 
+    public async Task<OperationResult> CheckAsync()
+    {
+        if (checkedUpdate) return new OperationResult();
+        if (activeCheck != null && !activeCheck.IsCompleted)
+            return OperationResult.Error(FailureKind.Busy, "Update check is still settling.");
+        // Only the metadata lookup blocks startup. A flexible update downloads in the
+        // background by design; waiting on the full download here caused startup to time out
+        // on slow connections even though nothing was actually wrong.
+        activeCheck = CheckInfoAsync();
+        if (await Task.WhenAny(activeCheck, Task.Delay(30000)) != activeCheck)
+            return OperationResult.Error(FailureKind.Timeout, "Update check timed out.");
+        var result = await activeCheck;
+        checkedUpdate = result.Succeeded;
+        return result;
+    }
+
+    private async Task<OperationResult> CheckInfoAsync()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
         try
         {
-            LogMessage("실행");
-            appUpdateManager = new AppUpdateManager();
-            LogMessage("앱 업데이트 매니저 참조 성공");
-            StartCoroutine(CheckForUpdate());
-            LogMessage("앱 업데이트 코루틴 실행 성공");
+            LogMessage("Checking app update");
+            var manager = new AppUpdateManager();
+            var info = manager.GetAppUpdateInfo();
+            while (!info.IsDone) await Task.Yield();
+            if (!info.IsSuccessful) return OperationResult.Error(FailureKind.Network, "Update info: " + info.Error);
+            var value = info.GetResult();
+            if (value.UpdateAvailability == UpdateAvailability.UpdateAvailable)
+                _ = RunFlexibleUpdate(manager, value);
+            return new OperationResult();
         }
-        catch(Exception err)
-        {
-            LogMessage(err.Message);
-        }
-    }
-    private IEnumerator CheckForUpdate()
-    {
-        LogMessage("업데이트 정보를 가져오는 중...");
-        PlayAsyncOperation<AppUpdateInfo, AppUpdateErrorCode> appUpdateInfoOperation =
-            appUpdateManager.GetAppUpdateInfo();
-        yield return appUpdateInfoOperation;
-
-        if (appUpdateInfoOperation.IsSuccessful)
-        {
-            var appUpdateInfoResult = appUpdateInfoOperation.GetResult();
-            LogMessage("업데이트 정보 수신 성공");
-
-            if (appUpdateInfoResult.UpdateAvailability == UpdateAvailability.UpdateAvailable)
-            {
-                LogMessage("업데이트가 필요합니다.\n자동으로 업데이트를 진행합니다.");
-                var appUpdateOptions = AppUpdateOptions.FlexibleAppUpdateOptions();
-                var startUpdateRequest = appUpdateManager.StartUpdate(appUpdateInfoResult, appUpdateOptions);
-
-                while (!startUpdateRequest.IsDone)
-                {
-                    if (startUpdateRequest.Status == AppUpdateStatus.Downloading)
-                    {
-                        LogMessage("업데이트 다운로드가 진행 중입니다...");
-                    }
-                    else if (startUpdateRequest.Status == AppUpdateStatus.Downloaded)
-                    {
-                        LogMessage("업데이트 다운로드가 완료되었습니다 !");
-                    }
-                    yield return null;
-                }
-                var result = appUpdateManager.CompleteUpdate();
-                while (!result.IsDone)
-                {
-                    yield return new WaitForEndOfFrame();
-                }
-                yield return (int)startUpdateRequest.Status;
-            }
-            else if (appUpdateInfoResult.UpdateAvailability == UpdateAvailability.UpdateNotAvailable)
-            {
-                LogMessage("환영합니다 !"); // 업데이트 없을 시
-                yield return (int)UpdateAvailability.UpdateNotAvailable;
-            }
-            else
-            {
-                LogMessage("업데이트 상태: " + appUpdateInfoResult.UpdateAvailability);
-                yield return (int)UpdateAvailability.Unknown;
-            }
-        }
-        else
-        {
-            LogMessage($"In-App Update Error: {appUpdateInfoOperation.Error}");
-        }
-
-#if !UNITY_EDITOR
-        backendManager.StartGoogleLogin();
+        catch (Exception e) { return OperationResult.Error(FailureKind.Unknown, "Update check: " + e.GetType().Name); }
+#else
+        await Task.CompletedTask;
+        return new OperationResult();
 #endif
     }
 
-    private void LogMessage(string message)
+#if UNITY_ANDROID && !UNITY_EDITOR
+    // Fire-and-forget: downloads and installs without blocking the startup pipeline.
+    private async Task RunFlexibleUpdate(AppUpdateManager manager, AppUpdateInfo value)
     {
-        logText.text = "";
-        if (logText != null && textPanel != null)
+        try
         {
-            textPanel.SetActive(true);
-            logText.text += message + "\n";
+            var request = manager.StartUpdate(value, AppUpdateOptions.FlexibleAppUpdateOptions());
+            while (!request.IsDone) await Task.Yield();
+            if (request.Error != AppUpdateErrorCode.NoError) return;
+            var complete = manager.CompleteUpdate();
+            while (!complete.IsDone) await Task.Yield();
+            if (complete.IsSuccessful) LogMessage("Update downloaded. Restart to apply.");
         }
+        catch (Exception e) { Debug.LogWarning("Flexible update failed: " + e.GetType().Name); }
     }
-
-    private void Update()
+#endif
+    public void LogMessage(string message)
     {
-        if (logText != null && textPanel != null)
-        {
-            if (string.IsNullOrEmpty(logText.text))
-            {
-                textPanel.SetActive(false);
-            }
-        }
+        if (textPanel != null) textPanel.SetActive(true);
+        if (logText != null) logText.text = message;
     }
 }

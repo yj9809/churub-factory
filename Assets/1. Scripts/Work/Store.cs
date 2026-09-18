@@ -12,8 +12,8 @@ public class Store : MonoBehaviour
     [SerializeField] private GameObject commonGameObjects;
     [SerializeField] private TextMeshProUGUI goldTxt;
 
-    private float goldPerSecond; // √ ¥Á ª˝ªÍ∑Æ
-    private float timeInterval = 1f; // ª˝ªÍ ¡÷±‚
+    private float goldPerSecond; // Ï¥àÎãπ ÏÉùÏÇ∞Îüâ
+    private float timeInterval = 1f; // ÏÉùÏÇ∞ Ï£ºÍ∏∞
     private float timer = 0;
     [HideInInspector]public float totalGold = 0f;
 
@@ -34,16 +34,22 @@ public class Store : MonoBehaviour
     {
         bool isActive = false;
 
+        var state = DataManager.Instance.baseCost;
+        if (state.IsUnlocked("Store"))
+        {
+            store.SetActive(true);
+            stall.SetActive(false);
+        }
         if (stall.activeSelf)
         {
             isActive = true;
-            goldPerSecond = 5f;
+            goldPerSecond = Churub.Core.BalanceTable.StallIncome;
             store.SetActive(false);
         }
         else if (store.activeSelf)
         {
             isActive = true;
-            goldPerSecond = 10f;
+            goldPerSecond = Churub.Core.BalanceTable.StoreIncome;
             stall.SetActive(false);
             UIManager.Instance.storeUpgradeButton.gameObject.SetActive(false);
         }

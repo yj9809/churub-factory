@@ -17,24 +17,19 @@ public class TrashCan : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Stack<GameObject> stack
-                = player.IngredientStack.Count > 0 ? player.IngredientStack
-                : player.ChuruStack.Count > 0 ? player.ChuruStack
-                : player.BoxStack.Count > 0 ? player.BoxStack
-                : null;
-            if (stack != null)
+            if (!player.Inventory.IsEmpty)
             {
-                ClearStack(stack);
+                ClearInventory(player.Inventory);
             }
         }
     }
-    private void ClearStack(Stack<GameObject> stack)
+    private void ClearInventory(CarrierInventory inventory)
     {
         animator.SetTrigger("TrashCan");
-        foreach (GameObject item in stack)
+        while (inventory.TryPop(out var item))
         {
-            PoolingManager.Instance.ReturnObjecte(item);
+            if (item == null) continue;
+            PoolingManager.Instance.ReturnObjecte(item.gameObject);
         }
-        stack.Clear();
     }
 }

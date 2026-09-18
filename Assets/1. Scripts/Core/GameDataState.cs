@@ -8,12 +8,12 @@ namespace Churub.Core
 
         public Dictionary<string, int> upgradeCosts = new Dictionary<string, int>
         {
-            { GameDataSchema.Upgrades.SpeedCost, 500 },
-            { GameDataSchema.Upgrades.MaxStackCost, 500 },
-            { GameDataSchema.Upgrades.GoldPerBoxCost, 5000 },
-            { GameDataSchema.Upgrades.EmployeeSpeedCost, 500 },
-            { GameDataSchema.Upgrades.EmployeeMaxStackCost, 500 },
-            { GameDataSchema.Upgrades.EmployeeAddCost, 5000 },
+            { GameDataSchema.Upgrades.SpeedCost, BalanceTable.Cost(UpgradeType.PlayerSpeed, 0) },
+            { GameDataSchema.Upgrades.MaxStackCost, BalanceTable.Cost(UpgradeType.PlayerMaxStack, 0) },
+            { GameDataSchema.Upgrades.GoldPerBoxCost, BalanceTable.Cost(UpgradeType.GoldPerBox, 0) },
+            { GameDataSchema.Upgrades.EmployeeSpeedCost, BalanceTable.Cost(UpgradeType.EmployeeSpeed, 0) },
+            { GameDataSchema.Upgrades.EmployeeMaxStackCost, BalanceTable.Cost(UpgradeType.EmployeeMaxStack, 0) },
+            { GameDataSchema.Upgrades.EmployeeAddCost, BalanceTable.Cost(UpgradeType.EmployeeAdd, 0) },
             { GameDataSchema.Upgrades.MaxCount, 5 },
             { GameDataSchema.Upgrades.SpeedCount, 0 },
             { GameDataSchema.Upgrades.MaxStackCount, 0 },
@@ -64,6 +64,9 @@ namespace Churub.Core
 
         public int guideStep;
         public bool newGame = true;
+        // Bumped on every local capture. Lets Apply() tell an unsaved local snapshot
+        // apart from one made stale by another device or session.
+        public int saveRevision;
 
         public int UpgradeMaxCount => upgradeCosts[GameDataSchema.Upgrades.MaxCount];
 

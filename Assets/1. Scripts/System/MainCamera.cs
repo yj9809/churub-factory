@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 
-// ÀÌ°Ç ±Ç¿À¼®?? ÀÛÇ° ÀÏ²¨ÀÓ ¾Æ¸¶µµ ±×·³
-// ±×·¯´Ï±î ¹®Á¦ »ı±â¸é ±Ç¿À¼® ÂÊÀ¸·Î ¹®ÀÇ ºÎÅ¹
+// ì´ê±´ ê¶Œì˜¤ì„?? ì‘í’ˆ ì¼êº¼ì„ ì•„ë§ˆë„ ê·¸ëŸ¼
+// ê·¸ëŸ¬ë‹ˆê¹Œ ë¬¸ì œ ìƒê¸°ë©´ ê¶Œì˜¤ì„ ìª½ìœ¼ë¡œ ë¬¸ì˜ ë¶€íƒ
 public class MainCamera : MonoBehaviour
 {
     [SerializeField] private Player p;

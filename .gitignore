@@ -6,6 +6,7 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
+/.utmp/
 /MemoryCaptures/
 /Recordings/
 
@@ -40,3 +41,6 @@ Thumbs.db
 /Key/
 *.keystore
 *.jks
+
+# oh-my-claudecode local state
+.omc/

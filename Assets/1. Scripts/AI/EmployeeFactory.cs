@@ -96,6 +96,7 @@ public sealed class EmployeeFactory
             employee.PackaingEmployee();
         }
 
+        employee.SetTransportRole(activeEmployees.Count);
         employee.name = employeePrefab.name;
         availablePrefabs.RemoveAt(prefabIndex);
         activeEmployees.Add(employee);

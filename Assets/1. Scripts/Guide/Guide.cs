@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using DG.Tweening;
 using TMPro;
 using Sirenix.OdinInspector;
+using Churub.Core;
 
 public class Guide : MonoBehaviour
 {
@@ -47,7 +48,7 @@ public class Guide : MonoBehaviour
 
     private bool _guideDone = false;
 
-    private bool _ShowAd = false;
+    private Button claimButton;
 
     private void Awake()
     {
@@ -58,8 +59,7 @@ public class Guide : MonoBehaviour
 
     void Start()
     {
-        if (baseCost.guideStep > 14)
-            return;
+        BalanceTable.Synchronize(baseCost);
 
         guideButton.onClick.AddListener(GuideButton);
 
@@ -75,40 +75,103 @@ public class Guide : MonoBehaviour
             GuideLine();
         }
 
-        EmployeeActive();
+        CreateClaimButton();
     }
 
     void Update()
     {
         if (!_guideDone)
         {
-            GuideStep();
-        }
-
-        // 광고
-        if (!_ShowAd)
-        {
-            if (baseCost.guideStep == 6 && truck.BoxStack.Count == 1)
-            {
-                Ads();
-                _ShowAd = true;
-            }
-            else if (baseCost.guideStep == 10)
-            {
-                Ads();
-                _ShowAd = true;
-            }
-            else if (_guideDone)
-            {
-                Ads();
-                _ShowAd = true;
-            }
+            if (baseCost.guideStep <= 6) GuideStep();
+            else ShowExpansionGoals();
         }
     }
 
-    private void Ads()
+    private void CreateClaimButton()
     {
-        adExample.ShowAd();
+        var go = new GameObject("First Employee Reward", typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(guideUI.transform, false);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = rect.anchorMax = new Vector2(.5f, 0f);
+        rect.pivot = new Vector2(.5f, 1f);
+        rect.anchoredPosition = new Vector2(0, -12);
+        rect.sizeDelta = new Vector2(360, 64);
+        go.GetComponent<Image>().color = new Color(.2f, .45f, .2f);
+        claimButton = go.GetComponent<Button>();
+        var label = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+        label.transform.SetParent(go.transform, false);
+        var text = label.GetComponent<TextMeshProUGUI>();
+        text.font = guideText.font;
+        text.text = "첫 직원 맞이하기 (무료)";
+        text.fontSize = 24;
+        text.alignment = TextAlignmentOptions.Center;
+        text.raycastTarget = false;
+        var labelRect = (RectTransform)label.transform;
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = labelRect.offsetMax = Vector2.zero;
+        claimButton.onClick.AddListener(() => {
+            if (UIManager.Instance.ClaimFirstEmployee()) ShowExpansionGoals();
+        });
+        go.SetActive(false);
+    }
+
+    private void ShowExpansionGoals()
+    {
+        bool claim = BalanceTable.CanClaimEmployee(baseCost);
+        if (claimButton != null) claimButton.gameObject.SetActive(claim);
+        if (claim)
+        {
+            RefreshExpansionTargets(null);
+            UpdateGuide("첫 직원이 도착했어요", "무료 직원을 받고 원재료 운반을 맡겨보세요.", "", false);
+            guideLine.gameObject.SetActive(false);
+            return;
+        }
+
+        string nextFacility = BalanceTable.NextFacility(baseCost);
+        RefreshExpansionTargets(nextFacility);
+        guideLine.gameObject.SetActive(false);
+        if (nextFacility == null)
+        {
+            _GuideDone();
+            return;
+        }
+
+        string facilityName = FacilityName(nextFacility);
+        UpdateGuide(facilityName + " 해금", facilityName + " 건설하기",
+            BalanceTable.FacilityCost(nextFacility) + " 골드", false);
+    }
+
+    private void RefreshExpansionTargets(string nextFacility)
+    {
+        for (int i = 7; i < targets.Length; i++)
+        {
+            UnlockManager unlock = targets[i].GetComponent<UnlockManager>();
+            if (unlock != null)
+            {
+                bool isNext = unlock.Type.ToString() == nextFacility;
+                targets[i].SetActive(isNext && !unlock.IsPurchased);
+                continue;
+            }
+
+            // The office interaction point is not a facility unlock pad.
+            targets[i].SetActive(baseCost.IsUnlocked(GameDataSchema.Progress.Office));
+        }
+    }
+
+    private static string FacilityName(string key)
+    {
+        switch (key)
+        {
+            case "Office": return "사무실";
+            case "Container1": return "추가 컨테이너 1";
+            case "Machine1": return "추가 컨베이어 벨트 1";
+            case "Container2": return "추가 컨테이너 2";
+            case "Machine2": return "추가 컨베이어 벨트 2";
+            case "Stall": return "노점";
+            case "Store": return "상점";
+            default: return key;
+        }
     }
 
     private void GuideButton()
@@ -182,15 +245,6 @@ public class Guide : MonoBehaviour
             case 4: _Step4(); break;
             case 5: _Step5(); break;
             case 6: _Step6(); break;
-            case 7: _Step7(); break;
-            case 8: _Step8(); break;
-            case 9: _Step9(); break;
-            case 10: _Step10(); break;
-            case 11: _Step11(); break;
-            case 12: _Step12(); break;
-            case 13: _Step13(); break;
-            case 14: _Step14(); break;
-            case 15: _GuideDone(); break;
         }
     }
 
@@ -216,7 +270,7 @@ public class Guide : MonoBehaviour
     {
         baseCost.guideStep++;
         GuideLine();
-        _ShowAd = false;
+
     }
 
     private void UpdateGuide(string title, string text, string numberText, bool isCompleted)
@@ -239,7 +293,7 @@ public class Guide : MonoBehaviour
 
     private void SetWorkPoint()
     {
-        for (int i = 0; i <= baseCost.guideStep; i++)
+        for (int i = 0; i <= baseCost.guideStep && i < targets.Length; i++)
         {
             if (targets[i].GetComponent<WorkPoint>())
                 targets[i].SetActive(true);
@@ -258,32 +312,14 @@ public class Guide : MonoBehaviour
     {
         if (index >= 0 && index < targets.Length)
         {
-            targets[index].SetActive(true);
+            var unlock = targets[index].GetComponent<UnlockManager>();
+            if (unlock == null || !unlock.IsPurchased) targets[index].SetActive(true);
         }
     }
 
     private void GiveReward(int step)
     {
-        int reward = 0;
-
-        switch (step)
-        {
-            case 0: reward = 100; break;
-            case 1: reward = 200; break;
-            case 2: reward = 200; break;
-            case 3: reward = 300; break;
-            case 4: reward = 300; break;
-            case 5: reward = 500; break;
-            case 6: reward = 500; break;
-            case 7: reward = 1000; break;
-            case 8: reward = 1000; break;
-            case 9: reward = 1000; break;
-            case 10: reward = 1000; break;
-            case 11: reward = 1000; break;
-            case 12: reward = 1000; break;
-            case 13: reward = 1000; break;
-            case 14: reward = 1000; break;
-        }
+        int reward = BalanceTable.TutorialReward(step);
 
         if (reward > 0)
         {
@@ -297,95 +333,44 @@ public class Guide : MonoBehaviour
     {
         SetActiveTarget(0);
         UpdateGuide("공장냥의 첫걸음 1", "원재료 창고로 이동", ""
-            , player.IngredientStack.Count > 0);
+            , player.Inventory.ContainsType(ItemType.Ingredient));
     }
     private void _Step1()
     {
         SetActiveTarget(1);
         UpdateGuide("공장냥의 첫걸음 2", "원재료를 컨베이어 벨트로 옮기기", ""
-            , player.IngredientStack.Count <= 0);
+            , !player.Inventory.ContainsType(ItemType.Ingredient));
     }
     private void _Step2()
     {
         SetActiveTarget(2);
         UpdateGuide("공장냥의 첫걸음 3", "완성된 츄릅을 박스 포장대로 옮기기", ""
-            , player.ChuruStack.Count > 0);
+            , player.Inventory.ContainsType(ItemType.Churu));
     }
     private void _Step3()
     {
         SetActiveTarget(3);
-        UpdateGuide("공장냥의 첫걸음 4", "츄룹 창고 이동 작업", boxPackaging.ChuruStorage.Count.ToString() + " / 5"
-            , player.ChuruStack.Count <= 0 && boxPackaging.ChuruStorage.Count >= 5);
+        UpdateGuide("공장냥의 첫걸음 4", "츄룹 창고 이동 작업", boxPackaging.WaitingCount.ToString() + " / 5"
+            , !player.Inventory.ContainsType(ItemType.Churu) && boxPackaging.WaitingCount >= 5);
     }
     private void _Step4()
     {
         SetActiveTarget(4);
         UpdateGuide("공장냥의 첫걸음 5", "박스 포장대에서 박스 포장하기", ""
-            , boxStorage.bsType == BoxStorageType.BoxStorage && boxStorage.BoxStack.Count >= 1);
+            , boxStorage.bsType == BoxStorageType.BoxStorage && boxStorage.Count >= 1);
     }
     private void _Step5()
     {
         truck.gameObject.SetActive(true);
         SetActiveTarget(5);
         UpdateGuide("공장냥의 첫걸음 6", "츄릅박스를 트럭에 싣기", ""
-            , player.BoxStack.Count > 0);
+            , player.Inventory.ContainsType(ItemType.Box));
     }
     private void _Step6()
     {
         SetActiveTarget(6);
-        UpdateGuide("공장냥의 첫걸음 fin", "츄릅박스 5개를 트럭에 실어 판매하기", truck.BoxStack.Count.ToString() + " / 5"
-            , truck.BoxStack.Count >= 5);
-    }
-    private void _Step7()
-    {
-        SetActiveTarget(7);
-        UpdateGuide("공장 확장 1", "컨베이어 벨트 추가 건설하기", baseCost.PlayerGold.ToString() + " / 5000"
-            , _MachineObjects[0].activeSelf); 
-    }
-    private void _Step8()
-    {
-        SetActiveTarget(8);
-        UpdateGuide("공장엔 사무실이 필요하지", "사무실 건설하기", baseCost.PlayerGold.ToString() + " / 2500"
-            , _OfficeObject.activeSelf);
-    }
-    private void _Step9()
-    {
-        SetActiveTarget(9);
-        UpdateGuide("이젠 혼자하기 힘들어", "사무실에서 직원 고용하기", baseCost.PlayerGold.ToString() + " / 5000"
-            , baseCost.EmployeeAddCount > 0);
-        employeeAddButton.interactable = true;
-    }
-    private void _Step10()
-    {
-        SetActiveTarget(10);
-        UpdateGuide("공장 확장 2", "원재료 컨테니어 추가 건설하기", baseCost.PlayerGold.ToString() + " / 1000"
-            , _ContainerObjects[0].activeSelf);
-
-        EmployeeActive();
-    }
-    private void _Step11()
-    {
-        SetActiveTarget(11);
-        UpdateGuide("공장 확장 3", "컨베이어 벨트 추가 건설하기", baseCost.PlayerGold.ToString() + " / 10000"
-            , _MachineObjects[1].activeSelf);
-    }
-    private void _Step12()
-    {
-        SetActiveTarget(12);
-        UpdateGuide("공장 확장 4", "원재료 컨테니어 추가 건설하기", baseCost.PlayerGold.ToString() + " / 5000"
-            , _ContainerObjects[1].activeSelf);
-    }
-    private void _Step13()
-    {
-        SetActiveTarget(13);
-        UpdateGuide("츄릅 플리마켓 오픈 !", "상점 설치하기", baseCost.PlayerGold.ToString() + " / 10000"
-            , _StallObject.activeSelf);
-    }
-    private void _Step14()
-    {
-        SetActiveTarget(14);
-        UpdateGuide("츄릅 스토어 오픈 !", "상점 업그레이드 하기", baseCost.PlayerGold.ToString() + " / 20000"
-            , _StoreObject.activeSelf);
+        UpdateGuide("공장냥의 첫걸음 fin", "츄릅박스 5개를 트럭에 실어 판매하기", truck.LoadedCount.ToString() + " / 5"
+            , baseCost.IsUnlocked(BalanceTable.FirstSaleKey));
     }
     private void _GuideDone()
     {
@@ -396,8 +381,4 @@ public class Guide : MonoBehaviour
     }
     #endregion
 
-    private void EmployeeActive()
-    {
-        employeeAddButton.interactable = _ContainerObjects[0].activeSelf && _MachineObjects[0].activeSelf;
-    }
 }

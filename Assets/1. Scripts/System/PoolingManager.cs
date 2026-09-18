@@ -2,15 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Sirenix.OdinInspector;
+using DG.Tweening;
 
-// ÀÌ°Ç ³» ÀÛÇ°
-// ÀÌ¹ø¿£ Å¥·Î ÀÛ¾÷ÇÑ°Ô ¾Æ´Ï¶ó µñ¼Å³Ê¸®¸¦ È°¿ëÇØ ºÃÀ½
-// µñ¼Å³Ê¸®·Î ¾²´Ï ´õ ±ò²ûÇØÁø ´À³¦ ÃßÈÄ Ç®¸µ ÀÛ¾÷ÇÒ ÀÏ »ı±â¸é µñ¼Å³Ê¸®·Î ÀÛ¾÷ÇÏ¼À
+// ì´ê±´ ë‚´ ì‘í’ˆ
+// ì´ë²ˆì—” íë¡œ ì‘ì—…í•œê²Œ ì•„ë‹ˆë¼ ë”•ì…”ë„ˆë¦¬ë¥¼ í™œìš©í•´ ë´¤ìŒ
+// ë”•ì…”ë„ˆë¦¬ë¡œ ì“°ë‹ˆ ë” ê¹”ë”í•´ì§„ ëŠë‚Œ ì¶”í›„ í’€ë§ ì‘ì—…í•  ì¼ ìƒê¸°ë©´ ë”•ì…”ë„ˆë¦¬ë¡œ ì‘ì—…í•˜ì…ˆ
 public class PoolingManager : Singleton<PoolingManager>
 {
     private Dictionary<string, Queue<GameObject>> poolDictionary = new Dictionary<string, Queue<GameObject>>();
 
-    // ÀÌ°Ç ´©°¡ºÁµµ ÇÔ¼ö ÀÌ¸§ ¶§¹®¿¡ ¿ÀºêÁ§Æ® ¸¸µå´Â ºÎºĞÀÌ´Ù ÇÏ°í ÀÌÇØ °¡´É
+    // ì´ê±´ ëˆ„ê°€ë´ë„ í•¨ìˆ˜ ì´ë¦„ ë•Œë¬¸ì— ì˜¤ë¸Œì íŠ¸ ë§Œë“œëŠ” ë¶€ë¶„ì´ë‹¤ í•˜ê³  ì´í•´ ê°€ëŠ¥
     private GameObject CreateObj(GameObject ObjPrefab)
     {
         if(ObjPrefab == null)
@@ -21,15 +22,15 @@ public class PoolingManager : Singleton<PoolingManager>
         newObj.transform.localRotation = Quaternion.Euler(Vector3.zero);
         newObj.transform.localScale = Vector3.one;
 
-        // ¿©±â¼­ ²À ¶È°°Àº ÀÌ¸§À¸·Î ÇØÁà¾ß µñ¼Å³Ê¸®°¡ ¿©·¯°³ ¾È»ı±â´Ï ÁÖÀÇ ¹Ù¶÷.
-        // ¸· ¿À·ù·Î ¿ÀºêÁ§Æ® ÀÌ¸§(clone) ÇÏ°í ÇØ´ç Å¥°¡ ¾ø½À´Ï´Ù ³ª¿À¸é
-        // ¿©±â¼­ ÀÌ¸§ ¼³Á¤ÇØÁÖ´Â ºÎºĞÀÌ ¹®Á¦´Ï±î È®ÀÎ ÇÊ¿äÇÔ
+        // ì—¬ê¸°ì„œ ê¼­ ë˜‘ê°™ì€ ì´ë¦„ìœ¼ë¡œ í•´ì¤˜ì•¼ ë”•ì…”ë„ˆë¦¬ê°€ ì—¬ëŸ¬ê°œ ì•ˆìƒê¸°ë‹ˆ ì£¼ì˜ ë°”ëŒ.
+        // ë§‰ ì˜¤ë¥˜ë¡œ ì˜¤ë¸Œì íŠ¸ ì´ë¦„(clone) í•˜ê³  í•´ë‹¹ íê°€ ì—†ìŠµë‹ˆë‹¤ ë‚˜ì˜¤ë©´
+        // ì—¬ê¸°ì„œ ì´ë¦„ ì„¤ì •í•´ì£¼ëŠ” ë¶€ë¶„ì´ ë¬¸ì œë‹ˆê¹Œ í™•ì¸ í•„ìš”í•¨
         newObj.gameObject.name = ObjPrefab.name;
         newObj.SetActive(false);
         return newObj;
     }
 
-    // ¿©±ä ´©°¡ºÁµµ ¿ÀºêÁ§Æ® °¡Á®¿À´Â ÇÔ¼öÀÓ
+    // ì—¬ê¸´ ëˆ„ê°€ë´ë„ ì˜¤ë¸Œì íŠ¸ ê°€ì ¸ì˜¤ëŠ” í•¨ìˆ˜ì„
     public GameObject GetObj(GameObject prefab)
     {
         if(prefab == null)
@@ -38,9 +39,9 @@ public class PoolingManager : Singleton<PoolingManager>
         }
         if(!poolDictionary.ContainsKey(prefab.name))
         {
-            // Å°°¡ ¾øÀ¸¸é Å¥¸¦ »ı¼ºÇØÁÖ´Âµ¥ ¼ÖÁ÷È÷ ÀÌ°Ô ¸Â³ª ½ÍÀ½
-            // ±×·¡¼­ ÇØ´ç Å°°¡ ¾øÀ¸¸é ¹Ø¿¡¼­ ¸¸µéµµ·Ï ÇØµ×´Âµ¥
-            // Â÷¶ó¸® ¿©±â¼­ »õ·Î poolDictionary.Add·Î ¸¸µé¾îÁÖ´Â°Ô ÁÁÀº°Å ¾Æ´Ò±î ½ÍÀ½
+            // í‚¤ê°€ ì—†ìœ¼ë©´ íë¥¼ ìƒì„±í•´ì£¼ëŠ”ë° ì†”ì§íˆ ì´ê²Œ ë§ë‚˜ ì‹¶ìŒ
+            // ê·¸ë˜ì„œ í•´ë‹¹ í‚¤ê°€ ì—†ìœ¼ë©´ ë°‘ì—ì„œ ë§Œë“¤ë„ë¡ í•´ë’€ëŠ”ë°
+            // ì°¨ë¼ë¦¬ ì—¬ê¸°ì„œ ìƒˆë¡œ poolDictionary.Addë¡œ ë§Œë“¤ì–´ì£¼ëŠ”ê²Œ ì¢‹ì€ê±° ì•„ë‹ê¹Œ ì‹¶ìŒ
             poolDictionary[prefab.name] = new Queue<GameObject>();
         }
 
@@ -57,7 +58,7 @@ public class PoolingManager : Singleton<PoolingManager>
         return objToReturn;
     }
 
-    // ÀÌ°Ç ¿ÀºêÁ§Æ® ´Ù½Ã µ¹·Á¹ŞÀ» ¶§ ºÒ·¯¿À´Â ÇÔ¼öÀÓ
+    // ì´ê±´ ì˜¤ë¸Œì íŠ¸ ë‹¤ì‹œ ëŒë ¤ë°›ì„ ë•Œ ë¶ˆëŸ¬ì˜¤ëŠ” í•¨ìˆ˜ì„
     public void ReturnObjecte(GameObject returnPrefab)
     {
         if(returnPrefab == null)
@@ -65,9 +66,18 @@ public class PoolingManager : Singleton<PoolingManager>
             return;
         }
 
+        if (returnPrefab.TryGetComponent<Item>(out var item))
+        {
+            if (item.IsStored)
+            {
+                Debug.LogError("Remove the Item from its buffer before returning it to the pool.", returnPrefab);
+                return;
+            }
+            returnPrefab.transform.DOKill();
+        }
         returnPrefab.SetActive(false);
 
-        // ¿©±â if ¹®¿¡¼­ ÇØ´ç Å°°¡ ÀÖ´ÂÁö È®ÀÎÀ» ÇÔ
+        // ì—¬ê¸° if ë¬¸ì—ì„œ í•´ë‹¹ í‚¤ê°€ ìˆëŠ”ì§€ í™•ì¸ì„ í•¨
         if(poolDictionary.ContainsKey(returnPrefab.name))
         {
             if(returnPrefab.GetComponent<Rigidbody>())
@@ -79,11 +89,11 @@ public class PoolingManager : Singleton<PoolingManager>
         }
         else
         {
-            // ¸¸¾à Àß ¹Ù²Ü ÀÚ½Å ÀÖ´Ù ÇÏ¸é ÀÌ ºÎºĞÀ» À§ÂÊ¿¡¼­ Ã³¸®ÇØº¸´Â°Íµµ ÁÁÀ»²¨ °°À½
+            // ë§Œì•½ ì˜ ë°”ê¿€ ìì‹  ìˆë‹¤ í•˜ë©´ ì´ ë¶€ë¶„ì„ ìœ„ìª½ì—ì„œ ì²˜ë¦¬í•´ë³´ëŠ”ê²ƒë„ ì¢‹ì„êº¼ ê°™ìŒ
             poolDictionary.Add($"{returnPrefab.name}", new Queue<GameObject>());
             
-            // ÇØ´ç ºÎºĞÀº Å°°¡ ¾ø¾î¼­ Add ¸¦ ÅëÇØ ´Ù½Ã ¸¸µé¾ú´Âµ¥ ±»ÀÌ »èÁ¦ Ã³¸®ÇØ¾ßÇÏ³ª ½ÍÁö¸¸ 
-            // »èÁ¦ Ã³¸®ÇÒ°Ô ¸¹Áö ¾ÊÀ»²¨ °°¾Æ¼­ ±×³É ³ÀµÖºÃÀ½
+            // í•´ë‹¹ ë¶€ë¶„ì€ í‚¤ê°€ ì—†ì–´ì„œ Add ë¥¼ í†µí•´ ë‹¤ì‹œ ë§Œë“¤ì—ˆëŠ”ë° êµ³ì´ ì‚­ì œ ì²˜ë¦¬í•´ì•¼í•˜ë‚˜ ì‹¶ì§€ë§Œ 
+            // ì‚­ì œ ì²˜ë¦¬í• ê²Œ ë§ì§€ ì•Šì„êº¼ ê°™ì•„ì„œ ê·¸ëƒ¥ ëƒ…ë‘¬ë´¤ìŒ
             Destroy(returnPrefab);
         }
     }

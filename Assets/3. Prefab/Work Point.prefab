@@ -45,14 +45,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 717316efe29766b48a0c80ffd07ba194, type: 3}
+  action: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
-  _ingredientMaker: {fileID: 0}
-  _conveyorBelt: {fileID: 0}
-  _boxStorage: {fileID: 0}
-  _boxPackaging: {fileID: 0}
-  truck: {fileID: 0}
-  wpType: 0
 --- !u!198 &2944756444144404592
 ParticleSystem:
   m_ObjectHideFlags: 0

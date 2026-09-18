@@ -2,21 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Android;
-using DG.Tweening;
 
-// ¿©±â´Â Àç·á Å¸ÀÔ ³ª´²¼­ ¿òÁ÷ÀÓ °áÁ¤ÇØÁÙ·Á°í ¸¸µç enumÀÓ
-// create´Â Àç·á »ı»êÇÒ ¶§, DropÀº ¹°°Ç °¡Á®°¥ ¶§, Array´Â ¹Ú½º ½ºÅä¸®Áö¿¡ ¿Å±æ ¶§
-// Car´Â Æ®·°¿¡ ¹Ú½º ¿Å±æ ¶§, Box´Â ¸» ±×´ë·Î ¹Ú½º¸¦ ÇÃ·¹ÀÌ¾î Ä«Æ®¿¡ ¿Å±æ ¶§ 
-// ¾î´À ºÎºĞ ¿ÀºêÁ§Æ® ¿òÁ÷ÀÓÀÌ ÀÌ»óÇÏ´Ù ½ÍÀ¸¸é ¿©±â È®ÀÎÇØ¼­ ¹Ø¿¡ ¿òÁ÷ÀÓ Ã³¸®ÇÏ´Â ºÎºĞ¿¡ ÇØ´ç enum ¹øÈ£ Ã£¾Æ¼­ È®ÀÎÇÏ¸é µÊ
-public enum CheckType
-{
-    Create,
-    Drop,
-    Array,
-    Car,
-    Box
-}
-#region Áøµ¿ÀÌ¾ú´ø Ä£±¸...
+#region ì§„ë™ì´ì—ˆë˜ ì¹œêµ¬...
 public static class Vibrations
 {
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -54,79 +41,5 @@ public static class Utility
         BoxCollider ren = obj.GetComponent<BoxCollider>();
 
         return ren.size.y;
-    }
-    // parentPos ÀÌµ¿ ½ÃÅ³ °÷, churu ¸¸µé ¿ÀºêÁ§Æ®(Ã³À½ Àç·á ¸¸µé¾îÁÖ´Â °÷¿¡¼­¸¸ »ç¿ëÇÏ¸é µÉ²¨ °°¾Æ¼­ ³ª¸ÓÁö´Â ´Ù Null)
-    // getChuruStack °¡Á®¿Ã ½ºÅÃ(a¿¡¼­ b·Î ¿Å±æ ¶§ a¸¦ ¸»ÇÔ), setChuruStack ¹ŞÀ» ½ºÅÃ(¸¶Âù°¡Áö·Î b¸¦ ¸»ÇÔ), num Å¸ÀÔ ±¸ºĞÀ» À§ÇÑ ÀÎÆ®
-    // ¸· Àç·áµé ÀÌ»óÇÏ°Ô Å©°Ô³ª Àû°Ô ³ª¿Ã ¶§³ª Àç·áµéÀÌ ÀÌ»óÇÏ°Ô ¿òÁ÷ÀÏ ¶§ ´ëºÎºĞ ¿©±â¼­ È®ÀÎÇÏ¸é µÊ
-    /// <summary>
-    /// ¿ÀºêÁ§Æ® ÀÌµ¿ ½ÃÅ³ ÇÔ¼ö.
-    /// </summary>
-    /// <param name="parentPos">ÀÌµ¿ ½ÃÅ³ °÷</param>
-    /// <param name="churu">¸¸µé ¿ÀºêÁ§Æ®</param>
-    /// <param name="getChuruStack">°¡Á®¿Ã ½ºÅÃ</param>
-    /// <param name="setChuruStack">¹ŞÀ» ½ºÅÃ</param>
-    /// <param name="num">Å¸ÀÔÀ» ±¸ºĞÇÏ´Â ÀÎÆ®</param>
-    public static void ObjectDrop(Transform parentPos, GameObject churu, Stack<GameObject> getChuruStack, Stack<GameObject> setChuruStack, int num)
-    {
-        GameObject newChuru;
-
-        if (num == (int)CheckType.Create)
-        {
-            newChuru = churu;
-            newChuru.name = churu.name;
-            newChuru.transform.SetParent(parentPos);
-            newChuru.transform.DOLocalMove(new Vector3(0, 0 + (ObjRendererCheck(newChuru) * setChuruStack.Count), 0), 0.2f)
-                .SetEase(Ease.InBack)
-                .OnComplete(() => 
-                {
-                    newChuru.transform.localRotation = Quaternion.Euler(Vector3.zero);
-                    newChuru.transform.localScale = Vector3.one;
-                } );
-        }
-        else
-        {
-            if (num == (int)CheckType.Drop)
-            {
-                newChuru = getChuruStack.Pop();
-                newChuru.transform.DOLocalMove(new Vector3(0, 0 + (ObjRendererCheck(newChuru) * setChuruStack.Count), 0), 0.2f)
-                .SetEase(Ease.InBack)
-                .OnComplete(() =>
-                {
-                    newChuru.transform.localRotation = Quaternion.Euler(Vector3.zero);
-                    newChuru.transform.localScale = Vector3.one;
-                });
-            }
-            else if (num == (int) CheckType.Array)
-            {
-                newChuru = churu;
-                newChuru.transform.DOLocalMove(new Vector3(0, 0 + (ObjRendererCheck(newChuru) * (setChuruStack.Count % 10)), 0), 0.2f)
-                .SetEase(Ease.InBack)
-                .OnComplete(() =>
-                {
-                    newChuru.transform.localRotation = Quaternion.Euler(Vector3.zero);
-                    newChuru.transform.localScale = Vector3.one;
-                });
-            }
-            else if(num == (int) CheckType.Car)
-            {
-                newChuru = getChuruStack.Pop();
-                newChuru.transform.DOMove(parentPos.position, 0.2f).SetEase(Ease.InBack);
-            }
-            else
-            {
-                newChuru = getChuruStack.Pop();
-                newChuru.transform.DOLocalMove(new Vector3(0, 0 + (ObjRendererCheck(newChuru) * setChuruStack.Count), 0), 0.2f)
-                .SetEase(Ease.InBack)
-                .OnComplete(() =>
-                {
-                    newChuru.transform.localRotation = Quaternion.Euler(Vector3.zero);
-                    newChuru.transform.localScale = Vector3.one;
-                });
-            }
-        }
-        newChuru.transform.SetParent(parentPos);
-
-        if(setChuruStack != null)
-            setChuruStack.Push(newChuru);
     }
 }

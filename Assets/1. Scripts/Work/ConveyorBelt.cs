@@ -7,8 +7,13 @@ using Sirenix.OdinInspector;
 
 public enum ConveyorBeltType { Ingredient, Churu }
 
-public class ConveyorBelt : MonoBehaviour
+public class ConveyorBelt : MonoBehaviour, IItemTransferEndpoint
 {
+    public bool TryTransfer(CarrierInventory inventory, Transform carryParent)
+    {
+        return ItemTransferUtility.TryMove(inventory, input, ingredientStorage);
+    }
+
     [TabGroup("Setting"), SerializeField] private float speed = 3f;
     [TabGroup("Setting"), SerializeField] private float placeObjectTime = 3f;
     [TabGroup("Setting"), SerializeField] private Vector3 direction = Vector3.forward;
@@ -33,30 +38,21 @@ public class ConveyorBelt : MonoBehaviour
         set { placeObjectTime = value; }
     }
 
-    private float breakDownProb = 0.03f;
+    private float breakDownProb = Churub.Core.BalanceTable.BreakdownProbability;
     public float BreakDownProb
     {
         get { return breakDownProb; }
         set { breakDownProb = value; }
     }
 
-    private float nonBreakDownTime = 300f;
+    private float nonBreakDownTime = Churub.Core.BalanceTable.BreakdownProtection;
+    private bool breakdownUnlocked;
 
     private bool isOn = true;
     private bool isBreakDown = false;
 
     [TabGroup("Transform"), SerializeField] private Transform ingredientStorage;
-    public Transform IngredientStorage
-    {
-        get { return ingredientStorage; }
-    }
-
-    private Stack<GameObject> cbStack = new Stack<GameObject>();
-    public Stack<GameObject> CbStack
-    {
-        get { return cbStack; }
-        set { cbStack = value; }
-    }
+    private readonly ItemBuffer input = new ItemBuffer(int.MaxValue, ItemType.Ingredient);
 
     private void Start()
     {
@@ -72,7 +68,7 @@ public class ConveyorBelt : MonoBehaviour
 
     private void Update()
     {
-        if(boxStorage.BoxStack.Count >= 40)
+        if(boxStorage.IsFull)
         {
             isOn = false;
         }
@@ -81,8 +77,14 @@ public class ConveyorBelt : MonoBehaviour
             isOn = true;
         }
 
-        if (nonBreakDownTime >= 0)
-            nonBreakDownTime -= Time.deltaTime;
+        var state = DataManager.Instance.baseCost;
+        bool eligible = state.EmployeeAddCount >= 2 && Churub.Core.BalanceTable.Lines(state) >= 2;
+        if (!breakdownUnlocked && eligible)
+        {
+            breakdownUnlocked = true;
+            nonBreakDownTime = Churub.Core.BalanceTable.BreakdownProtection;
+        }
+        if (breakdownUnlocked && nonBreakDownTime >= 0) nonBreakDownTime -= Time.deltaTime;
     }
 
     private IEnumerator PlaceObject()
@@ -91,12 +93,12 @@ public class ConveyorBelt : MonoBehaviour
         {
             float randomValue = Random.value;
             yield return new WaitForSeconds(placeObjectTime);
-            if(cbStack.Count > 0 && randomValue < breakDownProb && nonBreakDownTime <=0)
+            if(breakdownUnlocked && input.Count > 0 && randomValue < breakDownProb && nonBreakDownTime <=0)
             {
                 BreakDownEvent();
             }
 
-            if (cbStack.Count > 0 && isOn && !isBreakDown)
+            if (input.Count > 0 && isOn && !isBreakDown)
             {
                 OnConveyorObj();
             }
@@ -115,11 +117,12 @@ public class ConveyorBelt : MonoBehaviour
         }
     }
 
-    // °¡µ¶¼ºÀ» À§ÇØ µû·Î ÇÔ¼ö·Î »©µ×½À´Ï´Ù.
+    // ê°€ë…ì„±ì„ ìœ„í•´ ë”°ë¡œ í•¨ìˆ˜ë¡œ ë¹¼ë’€ìŠµë‹ˆë‹¤.
     private void OnConveyorObj()
     {
-        PushStack();
-        GameObject newChuru = cbStack.Pop();
+        if (onBelt == null || !input.TryPop(out var item)) return;
+        GameObject newChuru = item.gameObject;
+        newChuru.transform.DOKill();
         newChuru.transform.position = onBelt.position;
         newChuru.transform.SetParent(onBelt);
 
@@ -130,7 +133,7 @@ public class ConveyorBelt : MonoBehaviour
         }
     }
 
-    // °íÀå ÀÌº¥Æ®¸¦ À§ÇÑ Å×½ºÆ® ÇÔ¼öµéÀÔ´Ï´Ù.
+    // ê³ ì¥ ì´ë²¤íŠ¸ë¥¼ ìœ„í•œ í…ŒìŠ¤íŠ¸ í•¨ìˆ˜ë“¤ì…ë‹ˆë‹¤.
     private void BreakDownEvent()
     {
         isBreakDown = true;
@@ -148,38 +151,22 @@ public class ConveyorBelt : MonoBehaviour
     {
         isBreakDown = false;
         eventGauge.gameObject.SetActive(false);
-        nonBreakDownTime = 300f;
+        nonBreakDownTime = Churub.Core.BalanceTable.BreakdownProtection;
         StartCoroutine(PlaceObject());
         StartCoroutine(DisplayImgChange());
-    }
-
-    // ÀÓ½Ã·Î ½ºÅÃ °ü·Ã ¹ö±× ¹ß»ı ¹®Á¦ ÇØ°á ÄÚµå.
-    // ÄÁº£ÀÌ¾î º§Æ® ¿Å±æ ¶§¸¶´Ù ½ºÅÃ ÃÊ±âÈ­ ÈÄ ÀÚ½Ä ¿ÀºêÁ§Æ®µéÀ» ´Ù½Ã Çª½¬ÇÏ´Â ÄÚµå·Î º¯°æ, ÃßÈÄ ¸Ş¸ğ¸® ¹®Á¦³ª ´Ù¸¥ ¹®Á¦ ¹ß»ı ÇÒ ¼ö ÀÖÀ»²¨ °°À½.
-    // ÃßÈÄ ÁÁÀº ¹æ¹ı »ı±â¸é ´Ù½Ã ¼öÁ¤ ¿¹Á¤.
-    private void PushStack()
-    {
-        if(ingredientStorage.childCount != cbStack.Count)
-        {
-            Debug.Log("½ºÅÃ ¼öÁ¤");
-            cbStack.Clear();
-            foreach (Transform item in ingredientStorage)
-            {
-                cbStack.Push(item.gameObject);
-            }
-        }
     }
 
     private void OnCollisionStay(Collision collision)
     {
         Rigidbody rb = collision.gameObject.GetComponent<Rigidbody>();
 
-        // ½ºÅÃÀÌ °¡µæ ½×¿´À» ¶§¸¦ ´ëºñÇØ¼­ ¸ØÃß´Â ÄÚµå ÀÛ¼º. (Å×½ºÆ®)
+        // ìŠ¤íƒì´ ê°€ë“ ìŒ“ì˜€ì„ ë•Œë¥¼ ëŒ€ë¹„í•´ì„œ ë©ˆì¶”ëŠ” ì½”ë“œ ì‘ì„±. (í…ŒìŠ¤íŠ¸)
         speed = isOn && !isBreakDown ? 5 : 0;
-        // ½ºÅÃÀÌ °¡µæ ½×ÀÌ¸é ¸ØÃß°í ½ºÅÃÀÌ ¾ø¾îÁ³À» °æ¿ì ´Ù½Ã ÀÛµ¿ È®ÀÎ.
+        // ìŠ¤íƒì´ ê°€ë“ ìŒ“ì´ë©´ ë©ˆì¶”ê³  ìŠ¤íƒì´ ì—†ì–´ì¡Œì„ ê²½ìš° ë‹¤ì‹œ ì‘ë™ í™•ì¸.
 
         if (rb != null)
         {
-            rb.velocity = speed * direction;
+            rb.linearVelocity = speed * direction;
         }
     }
 }

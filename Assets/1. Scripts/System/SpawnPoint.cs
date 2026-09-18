@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// ÀÌ°Ç ¾Æ¸¶ ±Ç¿À¼® ÀÛÇ°ÀÏÅÙµ¥? ¸ÂÀ»²¨ÀÓ
-// ±×·¡¼­ ¼ÖÁ÷È÷ ³ªµµ Àß ¸ğ¸£´Ï±î
-// ¹®Á¦ »ı±â¸é ¹Ù·Î ±Ç¿À¼®ÇÑÅ× ¹®ÀÇ ºÎÅ¹.
+// ì´ê±´ ì•„ë§ˆ ê¶Œì˜¤ì„ ì‘í’ˆì¼í…ë°? ë§ì„êº¼ì„
+// ê·¸ë˜ì„œ ì†”ì§íˆ ë‚˜ë„ ì˜ ëª¨ë¥´ë‹ˆê¹Œ
+// ë¬¸ì œ ìƒê¸°ë©´ ë°”ë¡œ ê¶Œì˜¤ì„í•œí…Œ ë¬¸ì˜ ë¶€íƒ.
 public class SpawnPoint : MonoBehaviour
 {
     [SerializeField] private GameObject[] npc;

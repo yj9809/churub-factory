@@ -25,6 +25,8 @@ public class Employee : MonoBehaviour
     private Animator animator;
     private NavMeshAgent na;
     private BaseCost baseCost;
+    private bool? cartVisible;
+    private Tween cartScaleTween;
 
     Vector3 previousPosition;
     Vector3 currentPosition;
@@ -35,25 +37,15 @@ public class Employee : MonoBehaviour
         set { baseCost.EmployeeMaxStackCount = value; }
     }
 
-    private Stack<GameObject> ingredientStack = new Stack<GameObject>();
-    public Stack<GameObject> IngredientStack
+    private readonly CarrierInventory inventory = new CarrierInventory(0);
+    public CarrierInventory Inventory
     {
-        get { return ingredientStack; }
-        set { ingredientStack = value; }
-    }
-
-    private Stack<GameObject> churuStack = new Stack<GameObject>();
-    public Stack<GameObject> ChuruStack
-    {
-        get { return churuStack; }
-        set { churuStack = value; }
-    }
-
-    private Stack<GameObject> boxStack = new Stack<GameObject>();
-    public Stack<GameObject> BoxStack
-    {
-        get { return boxStack; }
-        set { boxStack = value; }
+        get
+        {
+            // count < a fractional limit permits ceil(limit) items, as before.
+            inventory.Capacity = baseCost == null ? 0 : Mathf.Max(0, Mathf.CeilToInt(baseCost.EmployeeMaxStackCount));
+            return inventory;
+        }
     }
 
     [SerializeField] private int cbTransNum;
@@ -62,6 +54,10 @@ public class Employee : MonoBehaviour
         get { return cbTransNum; }
         set { cbTransNum = value; }
     }
+
+    private int transportRole;
+    private float pickupStarted = -1f;
+    public void SetTransportRole(int index) { transportRole = index == 0 ? 0 : 1; }
 
     private bool cbTransNumCheck = false;
     public bool CbTransNumCheck
@@ -95,6 +91,8 @@ public class Employee : MonoBehaviour
 
     private void OnDisable()
     {
+        cartScaleTween?.Kill();
+        cartVisible = null;
         StopWorkCheck();
         ReleaseCurrentTarget();
     }
@@ -121,7 +119,7 @@ public class Employee : MonoBehaviour
         {
             bool isBlend = false;
 
-            if (ingredientStack.Count > 0 || churuStack.Count > 0 || boxStack.Count > 0)
+            if (!Inventory.IsEmpty)
                 isBlend = true;
 
             animator.SetBool("isMove", true);
@@ -147,16 +145,16 @@ public class Employee : MonoBehaviour
     // 물건을 들고 있는지 판별하는 함수
     private void OnCart()
     {
-        if (ingredientStack.Count <= 0 && boxStack.Count <= 0 && churuStack.Count <= 0)
-        {
-            na.speed = baseCost.EmployeeSpeed;
-            cart.transform.DOScale(0, 0.2f);
-        }
-        else
-        {
-            na.speed = baseCost.EmployeeCartSpeed;
-            cart.transform.DOScale(Vector3.one, 0.2f);
-        }
+        bool shouldShowCart = !Inventory.IsEmpty;
+        // Keep speed upgrades effective even when the cart visibility stays unchanged.
+        na.speed = shouldShowCart ? baseCost.EmployeeCartSpeed : baseCost.EmployeeSpeed;
+        if (cartVisible == shouldShowCart)
+            return;
+
+        cartVisible = shouldShowCart;
+        cartScaleTween?.Kill();
+        cartScaleTween = cart.transform.DOScale(shouldShowCart ? 1f : 0f, 0.2f)
+            .OnKill(() => cartScaleTween = null);
     }
     // 타겟 전환용 함수
     private void TargetSwitching()
@@ -165,7 +163,7 @@ public class Employee : MonoBehaviour
         {
             ChangeTarget();
         }
-        else if (currentTarget != null && currentTarget.GetStackCount() == 0 && (ingredientStack.Count <= 0 && churuStack.Count <= 0 && boxStack.Count <= 0))
+        else if (currentTarget != null && currentTarget.GetStackCount() == 0 && Inventory.IsEmpty)
         {
             // 스택 카운터가 0인 경우 새로운 목표를 설정
             ReleaseCurrentTarget();
@@ -175,7 +173,15 @@ public class Employee : MonoBehaviour
     }
     private void ChangeTarget()
     {
-        if (ingredientStack.Count > 0)
+        if (currentTarget != null)
+        {
+            if (pickupStarted < 0f) pickupStarted = Time.time;
+            int carried = Inventory.Count;
+            // Pick up the stock that already exists without waiting for future production.
+            if (carried < MaxObjStackCount && currentTarget.GetStackCount() > 0 && Time.time - pickupStarted < .5f) return;
+        }
+
+        if (Inventory.ContainsType(ItemType.Ingredient))
         {
             if (currentTarget != null)
             {
@@ -188,7 +194,7 @@ public class Employee : MonoBehaviour
                 target = gm.ConveyorTransform(this);
             }
         }
-        else if (churuStack.Count > 0)
+        else if (Inventory.ContainsType(ItemType.Churu))
         {
             if (currentTarget != null)
             {
@@ -202,7 +208,7 @@ public class Employee : MonoBehaviour
 
             target = boxTrans;
         }
-        else if (boxStack.Count > 0)
+        else if (Inventory.ContainsType(ItemType.Box))
         {
             if (currentTarget != null)
             {
@@ -225,10 +231,11 @@ public class Employee : MonoBehaviour
         {
             if (!moving)
             {
-                if (gm.TryReserveWork(out var bestTarget))
+                if (gm.TryReserveWork(out var bestTarget, transportRole))
                 {
                     target = bestTarget.GetTransform();
                     currentTarget = bestTarget;
+                    pickupStarted = -1f;
                     moving = true;
                 }
             }
@@ -275,41 +282,17 @@ public class Employee : MonoBehaviour
         currentTarget = null;
     }
 
-    public void TakeObject(IngredientMaker im)
-    {
-        if (im.ChuruStack.Count > 0 && MaxObjStackCount > ingredientStack.Count && boxStack.Count <= 0)
-        {
-            Utility.ObjectDrop(cartTransform, null, im.ChuruStack, ingredientStack, 1);
-        }
-    }
-    // 컨베이어로 옮기는 함수
-    public void GiveObject(ConveyorBelt cb)
-    {
-        if (ingredientStack.Count > 0)
-        {
-            Utility.ObjectDrop(cb.IngredientStorage, null, ingredientStack, cb.CbStack, 1);
-        }
-    }
-    // 변환 재료 받아오는 함수
-    public void GiveObject(BoxStorage bs, bool isChuru)
-    {
-        Stack<GameObject> newStack = isChuru ? churuStack : boxStack;
+    public Transform CarryParent => cartTransform;
 
-        if (bs.BoxStack.Count > 0 && MaxObjStackCount > newStack.Count && ingredientStack.Count <= 0)
-        {
-            Utility.ObjectDrop(cartTransform, null, bs.BoxStack, newStack, 1);
-        }
-    }
-    // 박스 포장대에 옮기는 함수
-    public void GiveObject(BoxPackaging bp)
+    public bool CanCollectFrom(IStackable source)
     {
-        if (churuStack.Count > 0)
-        {
-            Utility.ObjectDrop(bp.churuStorageParent, null, churuStack, bp.ChuruStorage, 4);
-        }
+        return ReferenceEquals(currentTarget, source) && transportRole == source.GetTypeNum();
     }
+
     public void PackaingEmployee()
     {
+        cartScaleTween?.Kill();
+        cartVisible = null;
         employeeType = EmployeeType.Packaing;
     }
     public void DoBoxPackagingAnimationEmployee()

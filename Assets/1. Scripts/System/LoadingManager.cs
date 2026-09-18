@@ -1,48 +1,25 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
+using TMPro;
 
-// 권오석 작품 내꺼 아님 추가 설명 필요한 경우
-// 권오석한테 문의 바람
 public class LoadingManager : MonoBehaviour
 {
-    private static float loadingTime = 3f;
-    private static string gameScene = "Game";
-
     [SerializeField] private Image loadingBar;
-
-    private void Start()
+    [SerializeField] private TMP_Text statusText;
+    private float target;
+    private float displayed;
+    public bool IsComplete => displayed >= 1f;
+    public void Show(float progress, string message)
     {
-        GameManager.Instance.sceneName = gameScene;
-        
+        target = Mathf.Clamp01(progress);
+        if (displayed > target) displayed = target;
+        if (statusText != null) statusText.text = message;
     }
-
-    public void StartCoroutine()
+    private void Update()
     {
-        StartCoroutine(LoadScene());
+        displayed = Mathf.MoveTowards(displayed, target, Time.unscaledDeltaTime * .6f);
+        if (loadingBar != null) loadingBar.fillAmount = displayed;
     }
-    private IEnumerator LoadScene()
-    {
-        AsyncOperation gameLoad = SceneManager.LoadSceneAsync(gameScene);
-        gameLoad.allowSceneActivation = false;
-
-        float elapsedTime = 0f;
-        while (!gameLoad.isDone)
-        {
-            elapsedTime += Time.deltaTime;
-            float progress = Mathf.Clamp01(elapsedTime / loadingTime);
-
-            loadingBar.fillAmount = progress;
-
-            if (elapsedTime >= loadingTime)
-            {
-                loadingBar.fillAmount = 1.0f;
-                yield return new WaitForSeconds(1f);
-                gameLoad.allowSceneActivation = true;
-            }
-            yield return null;
-        }
-    }
+    // Keep old event bindings from bypassing startup validation.
+    public void StartCoroutine() { Debug.LogWarning("Scene entry is owned by StartupCoordinator."); }
 }
